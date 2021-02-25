@@ -1,8 +1,6 @@
 package chainmanager
 
 import (
-	"testing"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -11,14 +9,13 @@ import (
 
 // ChainManager manipulates chains
 type ChainManager struct {
-	t      *testing.T
 	env    *solo.Solo
 	chains map[string]*solo.Chain
 }
 
 // New instantiates a chain manager
 func New(env *solo.Solo) *ChainManager {
-	chainManager := &ChainManager{t: env.T, env: env, chains: make(map[string]*solo.Chain)}
+	chainManager := &ChainManager{env: env, chains: make(map[string]*solo.Chain)}
 	return chainManager
 }
 
@@ -34,8 +31,8 @@ func (chainManager *ChainManager) NewChain(chainOriginator signaturescheme.Signa
 // MustGetContractID ensures the specified chain contains the specified contract and returns its ContractID
 func (chainManager *ChainManager) MustGetContractID(chainName string, contractName string) coretypes.ContractID {
 	chain, ok := chainManager.chains[chainName]
-	require.True(chainManager.t, ok)
-	require.NotNil(chainManager.t, chain)
+	require.True(chainManager.env.T, ok)
+	require.NotNil(chainManager.env.T, chain)
 
 	contractID := coretypes.NewContractID(chain.ChainID, coretypes.Hn(contractName))
 	return contractID

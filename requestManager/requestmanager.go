@@ -1,14 +1,16 @@
 package requestmanager
 
-import "testing"
+import (
+	"github.com/iotaledger/wasp/packages/solo"
+)
 
 // RequestManager manipulates requests
 type RequestManager struct {
-	t *testing.T
+	env *solo.Solo
 }
 
 // New instantiates a request manager
-func New(t *testing.T) *RequestManager {
-	requestManager := &RequestManager{t: t}
+func New(env *solo.Solo) *RequestManager {
+	requestManager := &RequestManager{env: env}
 	return requestManager
 }

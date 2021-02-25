@@ -1,16 +1,16 @@
 package responsemanager
 
 import (
-	"testing"
+	"github.com/iotaledger/wasp/packages/solo"
 )
 
 // ResponseManager manipulates result structures
 type ResponseManager struct {
-	t *testing.T
+	env *solo.Solo
 }
 
 // New instantiates a result manager
-func New(t *testing.T) *ResponseManager {
-	resultHandler := &ResponseManager{t: t}
+func New(env *solo.Solo) *ResponseManager {
+	resultHandler := &ResponseManager{env: env}
 	return resultHandler
 }

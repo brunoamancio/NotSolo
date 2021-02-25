@@ -1,8 +1,6 @@
 package coloredtokenmanager
 
 import (
-	"testing"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -10,13 +8,12 @@ import (
 
 // ColoredTokenManager manipulates colored tokens
 type ColoredTokenManager struct {
-	t   *testing.T
 	env *solo.Solo
 }
 
 // New instantiates a colored token manager
 func New(env *solo.Solo) *ColoredTokenManager {
-	coloredTokenManager := &ColoredTokenManager{t: env.T, env: env}
+	coloredTokenManager := &ColoredTokenManager{env: env}
 	return coloredTokenManager
 }
 

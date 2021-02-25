@@ -1,8 +1,6 @@
 package signatureschememanager
 
 import (
-	"testing"
-
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -11,13 +9,12 @@ import (
 
 // SignatureSchemeManager manipulates signature structures
 type SignatureSchemeManager struct {
-	t   *testing.T
 	env *solo.Solo
 }
 
 // New instantiates a signature scheme manager
 func New(env *solo.Solo) *SignatureSchemeManager {
-	signatureSchemeHandler := &SignatureSchemeManager{t: env.T, env: env}
+	signatureSchemeHandler := &SignatureSchemeManager{env: env}
 	return signatureSchemeHandler
 }
 
