@@ -15,8 +15,8 @@ type ColoredTokenManager struct {
 }
 
 // New instantiates a colored token manager
-func New(t *testing.T, env *solo.Solo) *ColoredTokenManager {
-	coloredTokenManager := &ColoredTokenManager{t: t, env: env}
+func New(env *solo.Solo) *ColoredTokenManager {
+	coloredTokenManager := &ColoredTokenManager{t: env.T, env: env}
 	return coloredTokenManager
 }
 

@@ -9,6 +9,6 @@ type RequestManager struct {
 
 // New instantiates a request manager
 func New(t *testing.T) *RequestManager {
-	requestManager := &RequestManager{}
+	requestManager := &RequestManager{t: t}
 	return requestManager
 }

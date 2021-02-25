@@ -32,9 +32,9 @@ func New(t *testing.T) *NotSolo {
 	env := solo.New(t, notSolo.debug, notSolo.printStackTrace)
 
 	notSolo.env = env
-	notSolo.SigScheme = signatureschememanager.New(t, env)
-	notSolo.ColoredToken = coloredtokenmanager.New(t, env)
-	notSolo.Chain = chainmanager.New(t, env)
+	notSolo.SigScheme = signatureschememanager.New(env)
+	notSolo.ColoredToken = coloredtokenmanager.New(env)
+	notSolo.Chain = chainmanager.New(env)
 	notSolo.Request = requestmanager.New(t)
 	notSolo.Response = responsemanager.New(t)
 	notSolo.Data = datamanager.New(t)

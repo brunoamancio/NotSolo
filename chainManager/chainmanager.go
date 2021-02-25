@@ -17,8 +17,8 @@ type ChainManager struct {
 }
 
 // New instantiates a chain manager
-func New(t *testing.T, env *solo.Solo) *ChainManager {
-	chainManager := &ChainManager{t: t, env: env, chains: make(map[string]*solo.Chain)}
+func New(env *solo.Solo) *ChainManager {
+	chainManager := &ChainManager{t: env.T, env: env, chains: make(map[string]*solo.Chain)}
 	return chainManager
 }
 

@@ -16,8 +16,8 @@ type SignatureSchemeManager struct {
 }
 
 // New instantiates a signature scheme manager
-func New(t *testing.T, env *solo.Solo) *SignatureSchemeManager {
-	signatureSchemeHandler := &SignatureSchemeManager{t: t, env: env}
+func New(env *solo.Solo) *SignatureSchemeManager {
+	signatureSchemeHandler := &SignatureSchemeManager{t: env.T, env: env}
 	return signatureSchemeHandler
 }
 
