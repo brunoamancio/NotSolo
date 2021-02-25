@@ -70,5 +70,6 @@ func (chainManager *ChainManager) GetContractRecord(chain *solo.Chain, contractN
 func (chainManager *ChainManager) MustGetContractRecord(chain *solo.Chain, contractName string) *root.ContractRecord {
 	contractRecord, err := chainManager.GetContractRecord(chain, contractName)
 	require.NoError(chainManager.env.T, err, "Could not find contract")
+	require.NotNil(chainManager.env.T, contractRecord)
 	return contractRecord
 }
