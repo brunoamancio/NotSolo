@@ -14,16 +14,16 @@ import (
 
 // NotSolo is a wrapper around solo to simplify unit testing
 type NotSolo struct {
-	t                      *testing.T
-	debug                  bool
-	printStackTrace        bool
-	env                    *solo.Solo
-	SignatureSchemeManager *signatureschememanager.SignatureSchemeManager
-	ColoredTokenManager    *coloredtokenmanager.ColoredTokenManager
-	ChainManager           *chainmanager.ChainManager
-	RequestManager         *requestmanager.RequestManager
-	ResponseManager        *responsemanager.ResponseManager
-	DataManager            *datamanager.DataManager
+	t               *testing.T
+	debug           bool
+	printStackTrace bool
+	env             *solo.Solo
+	SigScheme       *signatureschememanager.SignatureSchemeManager
+	ColoredToken    *coloredtokenmanager.ColoredTokenManager
+	Chain           *chainmanager.ChainManager
+	Request         *requestmanager.RequestManager
+	Response        *responsemanager.ResponseManager
+	Data            *datamanager.DataManager
 }
 
 // New instantiates NotSolo with default settings
@@ -32,11 +32,11 @@ func New(t *testing.T) *NotSolo {
 	env := solo.New(t, notSolo.debug, notSolo.printStackTrace)
 
 	notSolo.env = env
-	notSolo.SignatureSchemeManager = signatureschememanager.New(t, env)
-	notSolo.ColoredTokenManager = coloredtokenmanager.New(t, env)
-	notSolo.ChainManager = chainmanager.New(t, env)
-	notSolo.RequestManager = requestmanager.New(t)
-	notSolo.ResponseManager = responsemanager.New(t)
-	notSolo.DataManager = datamanager.New(t)
+	notSolo.SigScheme = signatureschememanager.New(t, env)
+	notSolo.ColoredToken = coloredtokenmanager.New(t, env)
+	notSolo.Chain = chainmanager.New(t, env)
+	notSolo.Request = requestmanager.New(t)
+	notSolo.Response = responsemanager.New(t)
+	notSolo.Data = datamanager.New(t)
 	return notSolo
 }

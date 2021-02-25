@@ -13,10 +13,10 @@ func Test_MustGetInt64Result(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
 	const expectedDecoded = int64(1000)
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetInt64(dataBytes)
+	actualDecoded := notSolo.Data.MustGetInt64(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -28,7 +28,7 @@ func Test_MustGetBytesResult(t *testing.T) {
 	expectedDecoded := []byte{0, 0, 1}
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	actualDecoded := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -38,10 +38,10 @@ func Test_MustGetStringResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
 	const expectedDecoded = "test"
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetString(dataBytes)
+	actualDecoded := notSolo.Data.MustGetString(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -51,10 +51,10 @@ func Test_MustGetHnameResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
 	expectedDecoded := coretypes.Hn(accounts.Interface.Name)
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetHname(dataBytes)
+	actualDecoded := notSolo.Data.MustGetHname(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -63,12 +63,12 @@ func Test_MustGetHnameResult(t *testing.T) {
 func Test_MustGetAgentIDResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
-	keyPair := notSolo.SignatureSchemeManager.NewSignatureScheme()
-	expectedAgentID := notSolo.SignatureSchemeManager.MustGetAgentID(keyPair)
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedAgentID)
+	keyPair := notSolo.SigScheme.NewSignatureScheme()
+	expectedAgentID := notSolo.SigScheme.MustGetAgentID(keyPair)
+	dataBytes := notSolo.Data.MustGetBytes(expectedAgentID)
 
 	// Act
-	actualAgentID := notSolo.DataManager.MustGetAgentID(dataBytes)
+	actualAgentID := notSolo.Data.MustGetAgentID(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedAgentID, actualAgentID)
@@ -77,12 +77,12 @@ func Test_MustGetAgentIDResult(t *testing.T) {
 func Test_MustGetAddressResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
-	keyPair := notSolo.SignatureSchemeManager.NewSignatureScheme()
-	expectedDecoded := notSolo.SignatureSchemeManager.MustGetAddress(keyPair)
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	keyPair := notSolo.SigScheme.NewSignatureScheme()
+	expectedDecoded := notSolo.SigScheme.MustGetAddress(keyPair)
+	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetAddress(dataBytes)
+	actualDecoded := notSolo.Data.MustGetAddress(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -91,11 +91,11 @@ func Test_MustGetAddressResult(t *testing.T) {
 func Test_MustGetChainIDResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
-	expectedDecoded := notSolo.ChainManager.NewChain(nil, "dummyChain").ChainID
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	expectedDecoded := notSolo.Chain.NewChain(nil, "dummyChain").ChainID
+	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetChainID(dataBytes)
+	actualDecoded := notSolo.Data.MustGetChainID(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -104,11 +104,11 @@ func Test_MustGetChainIDResult(t *testing.T) {
 func Test_MustGetColorResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
-	expectedDecoded := notSolo.ChainManager.NewChain(nil, "dummyChain").ChainColor
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	expectedDecoded := notSolo.Chain.NewChain(nil, "dummyChain").ChainColor
+	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetColor(dataBytes)
+	actualDecoded := notSolo.Data.MustGetColor(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -118,12 +118,12 @@ func Test_MustGetContractIDResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
 	chainName := "dummyChain"
-	notSolo.ChainManager.NewChain(nil, chainName)
-	expectedDecoded := notSolo.ChainManager.MustGetContractID(chainName, accounts.Interface.Name)
-	dataBytes := notSolo.DataManager.MustGetBytes(expectedDecoded)
+	notSolo.Chain.NewChain(nil, chainName)
+	expectedDecoded := notSolo.Chain.MustGetContractID(chainName, accounts.Interface.Name)
+	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetContractID(dataBytes)
+	actualDecoded := notSolo.Data.MustGetContractID(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
@@ -132,11 +132,11 @@ func Test_MustGetContractIDResult(t *testing.T) {
 func Test_MustGetHashResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
-	expectedDecoded := notSolo.ChainManager.NewChain(nil, "dummyChain").State.Hash()
-	dataBytes := notSolo.DataManager.MustGetBytes(&expectedDecoded)
+	expectedDecoded := notSolo.Chain.NewChain(nil, "dummyChain").State.Hash()
+	dataBytes := notSolo.Data.MustGetBytes(&expectedDecoded)
 
 	// Act
-	actualDecoded := notSolo.DataManager.MustGetHash(dataBytes)
+	actualDecoded := notSolo.Data.MustGetHash(dataBytes)
 
 	// Assert
 	require.Equal(t, expectedDecoded, actualDecoded)
