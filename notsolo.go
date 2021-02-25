@@ -33,14 +33,25 @@ type Initializable interface {
 	IsInitialized() bool
 }
 
+// Disposable defines a contract to clear resources
+type Disposable interface {
+	Dispose()
+}
+
 // IsInitialized implements Initializable for *NotSolo
 func (notSolo *NotSolo) IsInitialized() bool {
 	return notSolo.env != nil
 }
 
+// Dispose implements Disposable for NotSolo
+func (notSolo *NotSolo) Dispose() {
+	notSolo.Chain.Dispose()
+}
+
 // New instantiates NotSolo with default settings
 func New(t *testing.T) *NotSolo {
 	if notSolo.IsInitialized() {
+		notSolo.Dispose()
 		notSolo.env.T = t
 	} else {
 		loadManagers(t)

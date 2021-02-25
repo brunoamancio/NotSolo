@@ -26,7 +26,7 @@ func New(env *solo.Solo) *DataManager {
 	return resultHandler
 }
 
-// MustGetInt64 converts input data into int64. Panics when either no data is provided or cannot be converted.
+// MustGetInt64 converts input data into int64. Fails test when either no data is provided or cannot be converted.
 func (dataManager *DataManager) MustGetInt64(data []byte) int64 {
 	result, exists, err := codec.DecodeInt64(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" int64")
@@ -34,7 +34,7 @@ func (dataManager *DataManager) MustGetInt64(data []byte) int64 {
 	return result
 }
 
-// MustGetString converts input data into int64. Panics when either no data is provided or cannot be converted.
+// MustGetString converts input data into int64. Fails test when either no data is provided or cannot be converted.
 func (dataManager *DataManager) MustGetString(data []byte) string {
 	result, exists, err := codec.DecodeString(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" string")
@@ -42,7 +42,7 @@ func (dataManager *DataManager) MustGetString(data []byte) string {
 	return result
 }
 
-// MustGetAgentID converts input data into an AgentID. Panics if no input is provided or cannot be converted.
+// MustGetAgentID converts input data into an AgentID. Fails test if no input is provided or cannot be converted.
 func (dataManager *DataManager) MustGetAgentID(data []byte) coretypes.AgentID {
 	result, exists, err := codec.DecodeAgentID(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" AgentID")
@@ -50,7 +50,7 @@ func (dataManager *DataManager) MustGetAgentID(data []byte) coretypes.AgentID {
 	return result
 }
 
-// MustGetAddress converts input data into an Address. Panics if no input is provided or cannot be converted.
+// MustGetAddress converts input data into an Address. Fails test if no input is provided or cannot be converted.
 func (dataManager *DataManager) MustGetAddress(data []byte) address.Address {
 	result, exists, err := codec.DecodeAddress(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" Address")
@@ -58,7 +58,7 @@ func (dataManager *DataManager) MustGetAddress(data []byte) address.Address {
 	return result
 }
 
-// MustGetChainID converts input data into a ChainID. Panics if no input is provided or cannot be converted.
+// MustGetChainID converts input data into a ChainID. Fails test if no input is provided or cannot be converted.
 func (dataManager *DataManager) MustGetChainID(data []byte) coretypes.ChainID {
 	result, exists, err := codec.DecodeChainID(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" ChainID")
@@ -66,7 +66,7 @@ func (dataManager *DataManager) MustGetChainID(data []byte) coretypes.ChainID {
 	return result
 }
 
-// MustGetColor converts input data into a Color. Panics if no input is provided or cannot be converted.
+// MustGetColor converts input data into a Color. Fails test if no input is provided or cannot be converted.
 func (dataManager *DataManager) MustGetColor(data []byte) balance.Color {
 	result, exists, err := codec.DecodeColor(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" Color")
@@ -74,7 +74,7 @@ func (dataManager *DataManager) MustGetColor(data []byte) balance.Color {
 	return result
 }
 
-// MustGetContractID converts input data into a ContractID. Panics if no input is provided or cannot be converted.
+// MustGetContractID converts input data into a ContractID. Fails test if no input is provided or cannot be converted.
 func (dataManager *DataManager) MustGetContractID(data []byte) coretypes.ContractID {
 	result, exists, err := codec.DecodeContractID(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" ContractID")
@@ -82,15 +82,15 @@ func (dataManager *DataManager) MustGetContractID(data []byte) coretypes.Contrac
 	return result
 }
 
-// MustGetHash converts input data into a HashValue. Panics if no input is provided or cannot be converted.
+// MustGetHash converts input data into a HashValue. Fails test if no input is provided or cannot be converted.
 func (dataManager *DataManager) MustGetHash(data []byte) hashing.HashValue {
 	result, exists, err := codec.DecodeHashValue(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" HashValue")
 	require.True(dataManager.env.T, exists, dataDoesNotExist)
-	return *result
+	return result
 }
 
-// MustGetHname converts input data into an Hname. Panics if no input is provided or cannot be converted.
+// MustGetHname converts input data into an Hname. Fails test if no input is provided or cannot be converted.
 func (dataManager *DataManager) MustGetHname(data []byte) coretypes.Hname {
 	result, exists, err := codec.DecodeHname(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" Hname")
@@ -98,7 +98,7 @@ func (dataManager *DataManager) MustGetHname(data []byte) coretypes.Hname {
 	return result
 }
 
-// MustGetBytes returns the input as is. Panics if no input is provided.
+// MustGetBytes returns the input as is. Fails test if no input is provided.
 func (dataManager *DataManager) MustGetBytes(data interface{}) []byte {
 	var bytes []byte
 	require.NotPanics(dataManager.env.T, func() { bytes = codec.Encode(data) }, couldNotConvertDataInto+" bytes")
