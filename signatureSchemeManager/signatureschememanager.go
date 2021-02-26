@@ -3,6 +3,7 @@ package signatureschememanager
 import (
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 )
@@ -38,4 +39,19 @@ func (sigSchemeHandler *SignatureSchemeManager) NewSignatureScheme() signaturesc
 // NewSignatureSchemeWithFunds generates a private/public key pair and assigns 1337 iota tokens to it
 func (sigSchemeHandler *SignatureSchemeManager) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	return sigSchemeHandler.env.NewSignatureSchemeWithFunds()
+}
+
+// RequireValueTangleBalance verifies if the signature scheme has the expected balance of the specified color in the value tangle.
+// Fails test if balance is not equal to expectedBalance.
+func (sigSchemeHandler *SignatureSchemeManager) RequireValueTangleBalance(sigScheme signaturescheme.SignatureScheme, color balance.Color, expectedBalance int64) {
+	address := sigScheme.Address()
+	sigSchemeHandler.env.AssertAddressBalance(address, color, expectedBalance)
+}
+
+// RequireChainBalance verifies if the signature scheme has the expected balance of the specified color in the specified chain.
+// Fails test if balance is not equal to expectedBalance.
+func (sigSchemeHandler *SignatureSchemeManager) RequireChainBalance(sigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, expectedBalance int64) {
+	address := sigScheme.Address()
+	agentID := coretypes.NewAgentIDFromAddress(address)
+	chain.AssertAccountBalance(agentID, color, expectedBalance)
 }
