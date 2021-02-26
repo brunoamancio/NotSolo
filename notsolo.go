@@ -3,12 +3,12 @@ package notsolo
 import (
 	"testing"
 
-	chainmanager "github.com/brunoamancio/NotSolo/chainManager"
-	coloredtokenmanager "github.com/brunoamancio/NotSolo/coloredTokenManager"
-	datamanager "github.com/brunoamancio/NotSolo/dataManager"
-	requestmanager "github.com/brunoamancio/NotSolo/requestManager"
-	responsemanager "github.com/brunoamancio/NotSolo/responseManager"
-	signatureschememanager "github.com/brunoamancio/NotSolo/signatureSchemeManager"
+	"github.com/brunoamancio/NotSolo/chainmanager"
+	"github.com/brunoamancio/NotSolo/coloredtokenmanager"
+	"github.com/brunoamancio/NotSolo/datamanager"
+	"github.com/brunoamancio/NotSolo/requestmanager"
+	"github.com/brunoamancio/NotSolo/responsemanager"
+	"github.com/brunoamancio/NotSolo/signatureschememanager"
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
