@@ -132,7 +132,8 @@ func (chainManager *ChainManager) MustGetContractRecord(chain *solo.Chain, contr
 	return contractRecord
 }
 
-// Transfer makes transfer of 'amount' of 'color' to the depositors account in 'chain'. Transfers to 'depositor' if no reciever is defined.
+// Transfer makes transfer of 'amount' of 'color' from the depositors account in the value tangle to the receivers account in 'chain'.
+// Transfers to 'depositor' if no reciever is defined.
 func (chainManager *ChainManager) Transfer(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, amount int64,
 	recieverSigScheme signaturescheme.SignatureScheme) error {
 
