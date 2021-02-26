@@ -29,7 +29,7 @@ func (sigSchemeHandler *SignatureSchemeManager) NewSignatureScheme() signaturesc
 	return sigScheme
 }
 
-// NewSignatureSchemeWithFunds generates a private/public key pair and assigns 1337 iota tokens to it (1337 is defined in utxodb.RequestFundsAmount)
+// NewSignatureSchemeWithFunds generates a private/public key pair and assigns 1337 iota tokens to it (amount of funds is defined in utxodb.RequestFundsAmount)
 func (sigSchemeHandler *SignatureSchemeManager) NewSignatureSchemeWithFunds() signaturescheme.SignatureScheme {
 	sigScheme := sigSchemeHandler.env.NewSignatureSchemeWithFunds()
 	require.NotNil(sigSchemeHandler.env.T, sigScheme)
@@ -56,12 +56,4 @@ func (sigSchemeHandler *SignatureSchemeManager) MustGetAddress(sigScheme signatu
 func (sigSchemeHandler *SignatureSchemeManager) RequireValueTangleBalance(sigScheme signaturescheme.SignatureScheme, color balance.Color, expectedBalance int64) {
 	address := sigScheme.Address()
 	sigSchemeHandler.env.AssertAddressBalance(address, color, expectedBalance)
-}
-
-// RequireChainBalance verifies if the signature scheme has the expected balance of the specified color in the specified chain.
-// Fails test if balance is not equal to expectedBalance.
-func (sigSchemeHandler *SignatureSchemeManager) RequireChainBalance(sigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, expectedBalance int64) {
-	address := sigScheme.Address()
-	agentID := coretypes.NewAgentIDFromAddress(address)
-	chain.AssertAccountBalance(agentID, color, expectedBalance)
 }

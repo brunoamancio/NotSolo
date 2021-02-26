@@ -18,22 +18,24 @@ func New(env *solo.Solo) *RequestManager {
 	return requestManager
 }
 
-// Post creates a request to the specified function in the contract in the chain as requester or, if not specified, as the chain originator. Returns response as a Dict or an error.
-func (requestManager *RequestManager) Post(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string, functionName string) (dict.Dict, error) {
-	request := solo.NewCallParams(contractName, functionName)
+// Post creates a request as requester or, if not specified, as the chain originator. The contract function in the chain is called with optional params.
+// Returns response as a Dict or an error.
+func (requestManager *RequestManager) Post(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
+	functionName string, params ...interface{}) (dict.Dict, error) {
+	request := solo.NewCallParams(contractName, functionName, params...)
 	response, err := chain.PostRequestSync(request, requesterSigScheme)
 	return response, err
 }
 
-// PostMustSucceed creates a request to the specified function in the contract in the chain as requester. Fails test if request fails.
-func (requestManager *RequestManager) PostMustSucceed(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string, functionName string) dict.Dict {
+// MustPost creates a request to contract function in the chain as requester. Fails test if request fails.
+func (requestManager *RequestManager) MustPost(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string, functionName string) dict.Dict {
 	response, err := requestManager.Post(requesterSigScheme, chain, contractName, functionName)
 	require.NoError(requestManager.env.T, err)
 	return response
 }
 
-// PostMustFail creates a request to the specified function in the contract in the chain as requester. Fails test if request succeeds.
-func (requestManager *RequestManager) PostMustFail(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string, functionName string) {
+// MustPostFail creates a request to contract function in the chain as requester. Fails test if request succeeds.
+func (requestManager *RequestManager) MustPostFail(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string, functionName string) {
 	_, err := requestManager.Post(requesterSigScheme, chain, contractName, functionName)
 	require.Error(requestManager.env.T, err)
 }
