@@ -56,8 +56,8 @@ func (chainManager *ChainManager) NewChain(chainOriginator signaturescheme.Signa
 	return newChain
 }
 
-// ChangeChainFees changes the specified chains owner fee as an authorized signature scheme. See 'GrantDeployPermission' on how to (de)authorize chain changes.
-// Fails test on error.
+// ChangeChainFees changes chains owner fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
+// See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
 func (chainManager *ChainManager) ChangeChainFees(authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, newChainOwnerFee int64) {
 
 	oldFeeColor, _, oldValidatorFee := chain.GetFeeInfo(accounts.Name)
@@ -73,26 +73,26 @@ func (chainManager *ChainManager) ChangeChainFees(authorizedSigScheme signatures
 	require.Equal(chainManager.env.T, newChainOwnerFee, ownerFee)
 }
 
-// RequireChainBalance verifies if the signature scheme has the expected balance of the specified color in the specified chain.
+// RequireChainBalance verifies if the signature scheme has the expected balance of 'color' in 'chain'.
 // Fails test if balance is not equal to expectedBalance.
 func (chainManager *ChainManager) RequireChainBalance(sigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, expectedBalance int64) {
 	agentID := coretypes.NewAgentIDFromAddress(sigScheme.Address())
 	chain.AssertAccountBalance(agentID, color, expectedBalance)
 }
 
-// GrantDeployPermission gives permission, as the chain originator, to the specified agentID to deploy SCs into the specified chain. Fails test on error.
+// GrantDeployPermission gives permission, as the chain originator, to 'agentID' to deploy SCs into the specified chain. Fails test on error.
 func (chainManager *ChainManager) GrantDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
 	err := chain.GrantDeployPermission(nil, authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not grant deploy permission")
 }
 
-// RevokeDeployPermission revokes permission, as the chain originator, from the specified agentIDs to deploy SCs into the specified chain. Fails test on error.
+// RevokeDeployPermission revokes permission, as the chain originator, from 'agentIDs' to deploy SCs into 'chain'. Fails test on error.
 func (chainManager *ChainManager) RevokeDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
 	err := chain.RevokeDeployPermission(nil, authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not revoke deploy permission")
 }
 
-// MustGetContractID ensures the specified chain contains the specified contract and returns its ContractID. Fails test on error.
+// MustGetContractID ensures 'chain' contains 'contract' and returns its ContractID. Fails test on error.
 func (chainManager *ChainManager) MustGetContractID(chainName string, contractName string) coretypes.ContractID {
 	chain, ok := chainManager.chains[chainName]
 	require.True(chainManager.env.T, ok)
@@ -102,7 +102,7 @@ func (chainManager *ChainManager) MustGetContractID(chainName string, contractNa
 	return contractID
 }
 
-// DeployWasmContract uploads and deploys the specified constract wasm file
+// DeployWasmContract uploads and deploys 'constract wasm file'
 func (chainManager *ChainManager) DeployWasmContract(chain *solo.Chain, contractOriginator signaturescheme.SignatureScheme, contractName string, contractWasmFilePath string) {
 	err := chain.DeployWasmContract(contractOriginator, contractName, contractWasmFilePath)
 	require.NoError(chainManager.env.T, err, "Could not deploy wasm contract")
@@ -119,12 +119,12 @@ func (chainManager *ChainManager) NewChainAndDeployWasmContract(chainOriginator 
 	return chain, contractRecord
 }
 
-// GetContractRecord searches the specified chain for the specified contract record by name
+// GetContractRecord searches 'chain' for 'contract record' by name
 func (chainManager *ChainManager) GetContractRecord(chain *solo.Chain, contractName string) (*root.ContractRecord, error) {
 	return chain.FindContract(contractName)
 }
 
-// MustGetContractRecord searches the specified chain for the specified contract record by name. Fails test on error.
+// MustGetContractRecord searches 'chain' for 'contract record' by name. Fails test on error.
 func (chainManager *ChainManager) MustGetContractRecord(chain *solo.Chain, contractName string) *root.ContractRecord {
 	contractRecord, err := chainManager.GetContractRecord(chain, contractName)
 	require.NoError(chainManager.env.T, err, "Could not find contract")
@@ -133,22 +133,22 @@ func (chainManager *ChainManager) MustGetContractRecord(chain *solo.Chain, contr
 }
 
 // Transfer makes transfer of 'amount' of 'color' from the depositors account in the value tangle to the receivers account in 'chain'.
-// Transfers to 'depositor' if no reciever is defined.
+// Transfers to 'depositor' if no receiver is defined.
 func (chainManager *ChainManager) Transfer(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, amount int64,
-	recieverSigScheme signaturescheme.SignatureScheme) error {
+	receiverSigScheme signaturescheme.SignatureScheme) error {
 
 	depositorAgentID := coretypes.NewAgentIDFromAddress(depositorSigScheme.Address())
-	recieverAgentID := coretypes.NewAgentIDFromAddress(recieverSigScheme.Address())
+	receiverAgentID := coretypes.NewAgentIDFromAddress(receiverSigScheme.Address())
 
 	// load old balance to check against the new balance
 	var params *solo.CallParams
 	var oldBalance int64
-	if recieverSigScheme == nil {
+	if receiverSigScheme == nil {
 		params = solo.NewCallParams(accounts.Name, accounts.FuncDeposit)
 		oldBalance = chain.GetAccountBalance(depositorAgentID).Balance(color)
 	} else {
-		params = solo.NewCallParams(accounts.Name, accounts.FuncDeposit, accounts.ParamAgentID, codec.EncodeAgentID(recieverAgentID))
-		oldBalance = chain.GetAccountBalance(recieverAgentID).Balance(color)
+		params = solo.NewCallParams(accounts.Name, accounts.FuncDeposit, accounts.ParamAgentID, codec.EncodeAgentID(receiverAgentID))
+		oldBalance = chain.GetAccountBalance(receiverAgentID).Balance(color)
 	}
 
 	// Transfer
@@ -157,10 +157,10 @@ func (chainManager *ChainManager) Transfer(depositorSigScheme signaturescheme.Si
 
 	// load new balance to check against the old balance
 	var newBalance int64
-	if recieverSigScheme == nil {
+	if receiverSigScheme == nil {
 		newBalance = chain.GetAccountBalance(depositorAgentID).Balance(color)
 	} else {
-		newBalance = chain.GetAccountBalance(recieverAgentID).Balance(color)
+		newBalance = chain.GetAccountBalance(receiverAgentID).Balance(color)
 	}
 
 	// checks if transfer is correct
@@ -168,13 +168,13 @@ func (chainManager *ChainManager) Transfer(depositorSigScheme signaturescheme.Si
 	return err
 }
 
-// TransferToSelf makes transfer of the specified amount of tokens of the specified color to the depositors account in the specified chain
+// TransferToSelf makes transfer of 'amount' of 'color' to the depositors account in 'chain'
 func (chainManager *ChainManager) TransferToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, amount int64) error {
 	err := chainManager.Transfer(depositorSigScheme, chain, color, amount, nil)
 	return err
 }
 
-// MustTransferToSelf makes transfer of the specified amount of tokens of the specified color to the depositors account in the specified chain. Fails test on error.
+// MustTransferToSelf makes transfer of 'amount' of 'color' to the depositors account in 'chain'. Fails test on error.
 func (chainManager *ChainManager) MustTransferToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, amount int64) {
 	err := chainManager.TransferToSelf(depositorSigScheme, chain, color, amount)
 	require.NoError(chainManager.env.T, err, "Could not complete transfer to self")
