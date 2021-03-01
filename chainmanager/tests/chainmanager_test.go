@@ -25,7 +25,7 @@ func Test_TransferToChainToSelf(t *testing.T) {
 	notSolo.Chain.RequireBalance(senderSigScheme, chain, balance.ColorIOTA, transferAmount+constants.IotaTokensConsumedByRequest)
 }
 
-func Test_TransferToSelfValueTangle(t *testing.T) {
+func Test_TransferToValueTangleToSelf(t *testing.T) {
 	notSolo := notsolo.New(t)
 
 	// Create a chain
@@ -48,12 +48,54 @@ func Test_TransferToSelfValueTangle(t *testing.T) {
 	notSolo.ValueTangle.RequireBalance(senderSigScheme, balance.ColorIOTA, balanceInValueTangle+balanceInChain)
 }
 
-// TODO Write this unit test
 func Test_TransferBetweenChains(t *testing.T) {
+	notSolo := notsolo.New(t)
 
+	// Create sourceChain and destinationChain
+	sourceChain := notSolo.Chain.NewChain(nil, "mySourceChain")
+	destinationChain := notSolo.Chain.NewChain(nil, "myDestinationChain")
+
+	// Create a sigscheme with dummy funds (amount is defined in utxodb.RequestFundsAmount)
+	senderSigScheme := notSolo.SigScheme.NewSignatureSchemeWithFunds()
+	transferAmount := int64(100)
+	receiverSigScheme := notSolo.SigScheme.NewSignatureScheme()
+
+	// Send some funds to chain
+	notSolo.ValueTangle.MustTransferToChainToSelf(senderSigScheme, sourceChain, balance.ColorIOTA, transferAmount)
+	senderBalanceInValueTangle := utxodb.RequestFundsAmount - transferAmount - constants.IotaTokensConsumedByRequest
+	senderBalanceInChain := transferAmount + constants.IotaTokensConsumedByRequest
+	notSolo.ValueTangle.RequireBalance(senderSigScheme, balance.ColorIOTA, senderBalanceInValueTangle)
+	notSolo.Chain.RequireBalance(senderSigScheme, sourceChain, balance.ColorIOTA, senderBalanceInChain)
+
+	// Send funds from sourceChain to destinationChain
+	notSolo.Chain.MustTransferBetweenChains(senderSigScheme, sourceChain, balance.ColorIOTA, senderBalanceInChain, destinationChain, receiverSigScheme)
+	notSolo.ValueTangle.RequireBalance(senderSigScheme, balance.ColorIOTA, senderBalanceInValueTangle-constants.IotaTokensConsumedByRequest)
+	notSolo.Chain.RequireBalance(senderSigScheme, sourceChain, balance.ColorIOTA, 0)
+	notSolo.Chain.RequireBalance(senderSigScheme, destinationChain, balance.ColorIOTA, constants.IotaTokensConsumedByRequest)
+	notSolo.Chain.RequireBalance(receiverSigScheme, destinationChain, balance.ColorIOTA, senderBalanceInChain)
 }
 
-// TODO Write this unit test
 func Test_TransferWithinChain(t *testing.T) {
+	notSolo := notsolo.New(t)
 
+	// Create sourceChain and destinationChain
+	chain := notSolo.Chain.NewChain(nil, "mySourceChain")
+
+	// Create a sigscheme with dummy funds (amount is defined in utxodb.RequestFundsAmount)
+	senderSigScheme := notSolo.SigScheme.NewSignatureSchemeWithFunds()
+	transferAmount := int64(100)
+	receiverSigScheme := notSolo.SigScheme.NewSignatureScheme()
+
+	// Send some funds to chain
+	notSolo.ValueTangle.MustTransferToChainToSelf(senderSigScheme, chain, balance.ColorIOTA, transferAmount)
+	senderBalanceInValueTangle := utxodb.RequestFundsAmount - transferAmount - constants.IotaTokensConsumedByRequest
+	senderBalanceInChain := transferAmount + constants.IotaTokensConsumedByRequest
+	notSolo.ValueTangle.RequireBalance(senderSigScheme, balance.ColorIOTA, senderBalanceInValueTangle)
+	notSolo.Chain.RequireBalance(senderSigScheme, chain, balance.ColorIOTA, senderBalanceInChain)
+
+	// Send funds from sourceChain to destinationChain
+	notSolo.Chain.MustTransferWithinChain(senderSigScheme, chain, balance.ColorIOTA, senderBalanceInChain, receiverSigScheme)
+	notSolo.ValueTangle.RequireBalance(senderSigScheme, balance.ColorIOTA, senderBalanceInValueTangle-constants.IotaTokensConsumedByRequest)
+	notSolo.Chain.RequireBalance(senderSigScheme, chain, balance.ColorIOTA, constants.IotaTokensConsumedByRequest)
+	notSolo.Chain.RequireBalance(receiverSigScheme, chain, balance.ColorIOTA, senderBalanceInChain)
 }

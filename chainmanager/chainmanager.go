@@ -1,6 +1,8 @@
 package chainmanager
 
 import (
+	"errors"
+
 	"github.com/brunoamancio/NotSolo/constants"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
@@ -132,14 +134,14 @@ func (chainManager *ChainManager) MustGetContractRecord(chain *solo.Chain, contr
 
 // MustTransferToValueTangleToSelf makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the depositors address in the value tangle.
 // Fails test on error.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn, not only the specified color and amount.
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'chain' to his address in the value tangle.
 func (chainManager *ChainManager) MustTransferToValueTangleToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64) {
 	err := chainManager.TransferToValueTangleToSelf(depositorSigScheme, chain, color, transferAmount)
 	require.NoError(chainManager.env.T, err)
 }
 
 // TransferToValueTangleToSelf makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the depositors address in the value tangle.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn, not only the specified color and amount.
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'chain' to his address in the value tangle.
 func (chainManager *ChainManager) TransferToValueTangleToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64) error {
 
 	request := solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
@@ -150,7 +152,7 @@ func (chainManager *ChainManager) TransferToValueTangleToSelf(depositorSigScheme
 
 // MustTransferBetweenChains makes transfer of 'amount' of 'color' from the depositors account in 'sourceChain' to the receivers account in 'destinationChain'.
 // Transfers to 'depositor' if no receiver is defined. Fails test on error.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn from 'sourceChain', not only the specified color and amount.
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'sourceChain' to his address in the value tangle.
 func (chainManager *ChainManager) MustTransferBetweenChains(depositorSigScheme signaturescheme.SignatureScheme, sourceChain *solo.Chain, color balance.Color, transferAmount int64,
 	destinationChain *solo.Chain, receiverSigScheme signaturescheme.SignatureScheme) {
 	err := chainManager.TransferBetweenChains(depositorSigScheme, sourceChain, color, transferAmount, destinationChain, receiverSigScheme)
@@ -159,7 +161,7 @@ func (chainManager *ChainManager) MustTransferBetweenChains(depositorSigScheme s
 
 // TransferBetweenChains makes transfer of 'amount' of 'color' from the depositors account in 'sourceChain' to the receivers account in 'destinationChain'.
 // Transfers to 'depositor' if no receiver is defined.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn from 'sourceChain', not only the specified color and amount.
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'sourceChain' to his address in the value tangle.
 func (chainManager *ChainManager) TransferBetweenChains(depositorSigScheme signaturescheme.SignatureScheme, sourceChain *solo.Chain, color balance.Color, transferAmount int64,
 	destinationChain *solo.Chain, receiverSigScheme signaturescheme.SignatureScheme) error {
 
@@ -185,4 +187,27 @@ func (chainManager *ChainManager) TransferBetweenChains(depositorSigScheme signa
 	return err
 }
 
-// TODO TransferWithinChain: Transfer within chain (different agents)
+// TransferWithinChain makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the receivers account in the same chain.
+// Nothing is transfered if no receiver is defined.
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn from 'sourceChain', not only the specified color and amount.
+func (chainManager *ChainManager) TransferWithinChain(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64,
+	receiverSigScheme signaturescheme.SignatureScheme) error {
+	isReceiverDefined := receiverSigScheme != nil
+
+	if !isReceiverDefined {
+		return errors.New("Receiver not defined")
+	}
+
+	// Transfer from depositor's account in 'chain' to the receiver's account in the same chain.
+	err := chainManager.TransferBetweenChains(depositorSigScheme, chain, color, transferAmount, chain, receiverSigScheme)
+	return err
+}
+
+// MustTransferWithinChain makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the receivers account in the same chain.
+// Nothing is transfered if no receiver is defined. Fails test on error.
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn from 'sourceChain', not only the specified color and amount.
+func (chainManager *ChainManager) MustTransferWithinChain(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64,
+	receiverSigScheme signaturescheme.SignatureScheme) {
+	err := chainManager.TransferWithinChain(depositorSigScheme, chain, color, transferAmount, receiverSigScheme)
+	require.NoError(chainManager.env.T, err)
+}
