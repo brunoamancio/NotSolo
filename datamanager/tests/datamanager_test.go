@@ -118,8 +118,8 @@ func Test_MustGetContractIDResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
 	chainName := "dummyChain"
-	notSolo.Chain.NewChain(nil, chainName)
-	expectedDecoded := notSolo.Chain.MustGetContractID(chainName, accounts.Interface.Name)
+	chain := notSolo.Chain.NewChain(nil, chainName)
+	expectedDecoded := notSolo.Chain.MustGetContractID(chain, accounts.Interface.Name)
 	dataBytes := notSolo.Data.MustGetBytes(expectedDecoded)
 
 	// Act
