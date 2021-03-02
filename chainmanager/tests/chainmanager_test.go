@@ -78,7 +78,7 @@ func Test_TransferBetweenChains(t *testing.T) {
 func Test_TransferWithinChain(t *testing.T) {
 	notSolo := notsolo.New(t)
 
-	// Create sourceChain and destinationChain
+	// Create a chain
 	chain := notSolo.Chain.NewChain(nil, "mySourceChain")
 
 	// Create a sigscheme with dummy funds (amount is defined in utxodb.RequestFundsAmount)
