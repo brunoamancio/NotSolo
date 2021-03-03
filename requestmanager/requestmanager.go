@@ -39,3 +39,28 @@ func (requestManager *RequestManager) MustPostFail(requesterSigScheme signatures
 	_, err := requestManager.Post(requesterSigScheme, chain, contractName, functionName)
 	require.Error(requestManager.env.T, err)
 }
+
+// View creates a view request. The contract view in the chain is called with optional params.
+// Returns response as a Dict or an error.
+func (requestManager *RequestManager) View(chain *solo.Chain, contractName string,
+	functionName string, params ...interface{}) (dict.Dict, error) {
+	response, err := chain.CallView(contractName, functionName, params...)
+	return response, err
+}
+
+// MustView creates a view request. The contract view in the chain is called with optional params.
+// Returns response as a Dict. Fails test on error.
+func (requestManager *RequestManager) MustView(chain *solo.Chain, contractName string,
+	functionName string, params ...interface{}) dict.Dict {
+	response, err := chain.CallView(contractName, functionName, params...)
+	require.NoError(requestManager.env.T, err)
+	return response
+}
+
+// MustViewFail creates a view request. The contract view in the chain is called with optional params.
+// Fails test if request succeeds.
+func (requestManager *RequestManager) MustViewFail(chain *solo.Chain, contractName string,
+	functionName string, params ...interface{}) {
+	_, err := chain.CallView(contractName, functionName, params...)
+	require.Error(requestManager.env.T, err)
+}
