@@ -78,14 +78,28 @@ func (chainManager *ChainManager) ChangeContractFees(authorizedSigScheme signatu
 	require.Equal(chainManager.env.T, newContractOwnerFee, ownerFee)
 }
 
-// GrantDeployPermission gives permission, as the chain originator, to 'agentID' to deploy SCs into the specified chain. Fails test on error.
-func (chainManager *ChainManager) GrantDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
+// GrantDeployPermission gives permission, as the chain originator, to 'authorizedSigScheme' to deploy SCs into the specified chain. Fails test on error.
+func (chainManager *ChainManager) GrantDeployPermission(chain *solo.Chain, authorizedSigScheme signaturescheme.SignatureScheme) {
+	authorizedAgentID := coretypes.NewAgentIDFromSigScheme(authorizedSigScheme)
 	err := chain.GrantDeployPermission(nil, authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not grant deploy permission")
 }
 
-// RevokeDeployPermission revokes permission, as the chain originator, from 'agentIDs' to deploy SCs into 'chain'. Fails test on error.
-func (chainManager *ChainManager) RevokeDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
+// RevokeDeployPermission revokes permission, as the chain originator, from 'authorizedSigScheme' to deploy SCs into 'chain'. Fails test on error.
+func (chainManager *ChainManager) RevokeDeployPermission(chain *solo.Chain, authorizedSigScheme signaturescheme.SignatureScheme) {
+	authorizedAgentID := coretypes.NewAgentIDFromSigScheme(authorizedSigScheme)
+	err := chain.RevokeDeployPermission(nil, authorizedAgentID)
+	require.NoError(chainManager.env.T, err, "Could not revoke deploy permission")
+}
+
+// GrantAgentDeployPermission gives permission, as the chain originator, to 'authorizedAgentID' to deploy SCs into the specified chain. Fails test on error.
+func (chainManager *ChainManager) GrantAgentDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
+	err := chain.GrantDeployPermission(nil, authorizedAgentID)
+	require.NoError(chainManager.env.T, err, "Could not grant deploy permission")
+}
+
+// RevokeAgentDeployPermission revokes permission, as the chain originator, from 'authorizedAgentID' to deploy SCs into 'chain'. Fails test on error.
+func (chainManager *ChainManager) RevokeAgentDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
 	err := chain.RevokeDeployPermission(nil, authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not revoke deploy permission")
 }
