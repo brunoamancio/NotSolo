@@ -56,21 +56,26 @@ func (chainManager *ChainManager) NewChain(chainOriginator signaturescheme.Signa
 	return newChain
 }
 
-// ChangeChainFees changes chains owner fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
+// ChangeContractFees changes chains owner fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
 // See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
-func (chainManager *ChainManager) ChangeChainFees(authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, newChainOwnerFee int64) {
+func (chainManager *ChainManager) ChangeContractFees(authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
+	newContractOwnerFee int64) {
 
-	oldFeeColor, _, oldValidatorFee := chain.GetFeeInfo(accounts.Name)
+	contractRecord, err := chainManager.GetContractRecord(chain, contractName)
+	require.NoError(chainManager.env.T, err)
+	require.NotNil(chainManager.env.T, contractRecord, "Contract could not be found")
 
-	transferRequest := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamHname, accounts.Interface.Hname(), root.ParamOwnerFee, newChainOwnerFee)
-	_, err := chain.PostRequestSync(transferRequest, chain.OriginatorSigScheme)
+	oldFeeColor, _, oldValidatorFee := chain.GetFeeInfo(contractName)
+
+	request := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamHname, contractRecord.Hname(), root.ParamOwnerFee, newContractOwnerFee)
+	_, err = chain.PostRequestSync(request, authorizedSigScheme)
 	require.NoError(chainManager.env.T, err)
 
 	// Expect new fee chain owner fee
 	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Name)
 	require.Equal(chainManager.env.T, oldFeeColor, feeColor)
 	require.Equal(chainManager.env.T, oldValidatorFee, validatorFee)
-	require.Equal(chainManager.env.T, newChainOwnerFee, ownerFee)
+	require.Equal(chainManager.env.T, newContractOwnerFee, ownerFee)
 }
 
 // GrantDeployPermission gives permission, as the chain originator, to 'agentID' to deploy SCs into the specified chain. Fails test on error.
