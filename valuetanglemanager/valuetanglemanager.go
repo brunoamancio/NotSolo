@@ -44,11 +44,14 @@ func (valueTangleManager *ValueTangleManager) TransferToChain(depositorSigScheme
 	receiverAgentID := coretypes.NewAgentIDFromAddress(receiverAddress)
 
 	// Transfer
-	params := solo.NewCallParams(accounts.Name, accounts.FuncDeposit, accounts.ParamAgentID, codec.EncodeAgentID(receiverAgentID))
-	depositRequest := params.WithTransfer(color, transferAmount)
-	_, err := chain.PostRequestSync(depositRequest, depositorSigScheme)
-
+	err := transferToAgent(depositorSigScheme, chain, color, transferAmount, receiverAgentID)
 	return err
+}
+
+// MustTransferToChainToSelf makes transfer of 'amount' of 'color' from the depositors account in the value tangle to the depositors account in 'chain'. Fails test on error.
+func (valueTangleManager *ValueTangleManager) MustTransferToChainToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, amount int64) {
+	err := valueTangleManager.TransferToChainToSelf(depositorSigScheme, chain, color, amount)
+	require.NoError(valueTangleManager.env.T, err, "Could not complete transfer to self")
 }
 
 // TransferToChainToSelf makes transfer of 'amount' of 'color' from the depositors account in the value tangle to the depositors account in 'chain'.
@@ -57,10 +60,49 @@ func (valueTangleManager *ValueTangleManager) TransferToChainToSelf(depositorSig
 	return err
 }
 
-// MustTransferToChainToSelf makes transfer of 'amount' of 'color' from the depositors account in the value tangle to the depositors account in 'chain'. Fails test on error.
-func (valueTangleManager *ValueTangleManager) MustTransferToChainToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, amount int64) {
-	err := valueTangleManager.TransferToChainToSelf(depositorSigScheme, chain, color, amount)
-	require.NoError(valueTangleManager.env.T, err, "Could not complete transfer to self")
+// MustTransferToContract makes transfer of 'amount' of 'color' from the depositors account in the value tangle to the contract's account in 'chain'.
+// Nothing is transfered if no contract is neither defined nor found. Fails test on error.
+func (valueTangleManager *ValueTangleManager) MustTransferToContract(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64,
+	contractName string) {
+
+	err := valueTangleManager.TransferToContract(depositorSigScheme, chain, color, transferAmount, contractName)
+	require.NoError(valueTangleManager.env.T, err)
+}
+
+// TransferToContract makes transfer of 'amount' of 'color' from the depositors account in the value tangle to the contract's account in 'chain'.
+// Nothing is transfered if no contract is neither defined nor found.
+func (valueTangleManager *ValueTangleManager) TransferToContract(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64,
+	contractName string) error {
+
+	isContractDefined := contractName != ""
+	if !isContractDefined {
+		return nil
+	}
+
+	// Get contract record
+	contractRecord, err := chain.FindContract(contractName)
+	require.NoError(valueTangleManager.env.T, err)
+
+	if contractRecord == nil {
+		return nil
+	}
+
+	// Get contract's AgentID
+	contractID := coretypes.NewContractID(chain.ChainID, contractRecord.Hname())
+	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
+
+	// Transfer
+	err = transferToAgent(depositorSigScheme, chain, color, transferAmount, contractAgentID)
+	return err
+}
+
+func transferToAgent(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64,
+	agentID coretypes.AgentID) error {
+
+	params := solo.NewCallParams(accounts.Name, accounts.FuncDeposit, accounts.ParamAgentID, codec.EncodeAgentID(agentID))
+	depositRequest := params.WithTransfer(color, transferAmount)
+	_, err := chain.PostRequestSync(depositRequest, depositorSigScheme)
+	return err
 }
 
 // RequireBalance verifies if the signature scheme has the expected balance of 'color' in the value tangle.
