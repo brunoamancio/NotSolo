@@ -73,13 +73,6 @@ func (chainManager *ChainManager) ChangeChainFees(authorizedSigScheme signatures
 	require.Equal(chainManager.env.T, newChainOwnerFee, ownerFee)
 }
 
-// RequireBalance verifies if the signature scheme has the expected balance of 'color' in 'chain'.
-// Fails test if balance is not equal to expectedBalance.
-func (chainManager *ChainManager) RequireBalance(sigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, expectedBalance int64) {
-	agentID := coretypes.NewAgentIDFromAddress(sigScheme.Address())
-	chain.AssertAccountBalance(agentID, color, expectedBalance)
-}
-
 // GrantDeployPermission gives permission, as the chain originator, to 'agentID' to deploy SCs into the specified chain. Fails test on error.
 func (chainManager *ChainManager) GrantDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
 	err := chain.GrantDeployPermission(nil, authorizedAgentID)
@@ -210,4 +203,27 @@ func (chainManager *ChainManager) MustTransferWithinChain(depositorSigScheme sig
 	receiverSigScheme signaturescheme.SignatureScheme) {
 	err := chainManager.TransferWithinChain(depositorSigScheme, chain, color, transferAmount, receiverSigScheme)
 	require.NoError(chainManager.env.T, err)
+}
+
+// RequireBalance verifies if the signature scheme has the expected balance of 'color' in 'chain'.
+// Fails test if balance is not equal to expectedBalance.
+func (chainManager *ChainManager) RequireBalance(sigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, expectedBalance int64) {
+	agentID := coretypes.NewAgentIDFromSigScheme(sigScheme)
+	chain.AssertAccountBalance(agentID, color, expectedBalance)
+}
+
+// RequireContractBalance verifies if 'contract' has the expected balance of 'color' in 'chain'.
+// Fails test if contract is neither defined, nor found, or if the balance is not equal to expectedBalance.
+func (chainManager *ChainManager) RequireContractBalance(chain *solo.Chain, contractName string, color balance.Color, expectedBalance int64) {
+
+	// Get contract record
+	contractRecord, err := chain.FindContract(contractName)
+	require.NoError(chainManager.env.T, err)
+	require.NotNil(chainManager.env.T, contractRecord, "Contract could not be found")
+
+	// Get contract's AgentID
+	contractID := coretypes.NewContractID(chain.ChainID, contractRecord.Hname())
+	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
+
+	chain.AssertAccountBalance(contractAgentID, color, expectedBalance)
 }
