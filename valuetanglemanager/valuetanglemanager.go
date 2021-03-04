@@ -1,6 +1,7 @@
 package valuetanglemanager
 
 import (
+	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -108,5 +109,11 @@ func transferToAgent(depositorSigScheme signaturescheme.SignatureScheme, chain *
 // RequireBalance verifies if the signature scheme has the expected balance of 'color' in the value tangle.
 // Fails test if balance is not equal to expectedBalance.
 func (valueTangleManager *ValueTangleManager) RequireBalance(sigScheme signaturescheme.SignatureScheme, color balance.Color, expectedBalance int64) {
-	valueTangleManager.env.AssertAddressBalance(sigScheme.Address(), color, expectedBalance)
+	valueTangleManager.RequireAddressBalance(sigScheme.Address(), color, expectedBalance)
+}
+
+// RequireAddressBalance verifies if the address has the expected balance of 'color' in the value tangle.
+// Fails test if balance is not equal to expectedBalance.
+func (valueTangleManager *ValueTangleManager) RequireAddressBalance(address address.Address, color balance.Color, expectedBalance int64) {
+	valueTangleManager.env.AssertAddressBalance(address, color, expectedBalance)
 }
