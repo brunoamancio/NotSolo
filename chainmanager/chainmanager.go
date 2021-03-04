@@ -61,21 +61,42 @@ func (chainManager *ChainManager) NewChain(chainOriginator signaturescheme.Signa
 func (chainManager *ChainManager) ChangeContractFees(authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
 	newContractOwnerFee int64) {
 
-	contractRecord, err := chainManager.GetContractRecord(chain, contractName)
-	require.NoError(chainManager.env.T, err)
-	require.NotNil(chainManager.env.T, contractRecord, "Contract could not be found")
-
-	oldFeeColor, _, oldValidatorFee := chain.GetFeeInfo(contractName)
-
-	request := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamHname, contractRecord.Hname(), root.ParamOwnerFee, newContractOwnerFee)
-	_, err = chain.PostRequestSync(request, authorizedSigScheme)
-	require.NoError(chainManager.env.T, err)
+	oldFeeColor, _, oldValidatorFee := changeFee(chainManager, authorizedSigScheme, chain, contractName, root.ParamOwnerFee, newContractOwnerFee)
 
 	// Expect new fee chain owner fee
 	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Name)
 	require.Equal(chainManager.env.T, oldFeeColor, feeColor)
 	require.Equal(chainManager.env.T, oldValidatorFee, validatorFee)
 	require.Equal(chainManager.env.T, newContractOwnerFee, ownerFee)
+}
+
+// ChangeValidatorFees changes the validator fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
+// See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
+func (chainManager *ChainManager) ChangeValidatorFees(authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
+	newValidatorFee int64) {
+	oldFeeColor, oldOwnerFee, _ := changeFee(chainManager, authorizedSigScheme, chain, contractName, root.ParamValidatorFee, newValidatorFee)
+
+	// Expect new fee chain owner fee
+	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Name)
+	require.Equal(chainManager.env.T, oldFeeColor, feeColor)
+	require.Equal(chainManager.env.T, newValidatorFee, validatorFee)
+	require.Equal(chainManager.env.T, oldOwnerFee, ownerFee)
+}
+
+func changeFee(chainManager *ChainManager, authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
+	feeParam string, newFee int64) (oldFeeColor balance.Color, oldChainOwnerFee int64, oldValidatorFee int64) {
+
+	contractRecord, err := chainManager.GetContractRecord(chain, contractName)
+	require.NoError(chainManager.env.T, err)
+	require.NotNil(chainManager.env.T, contractRecord, "Contract could not be found")
+
+	oldFeeColor, oldChainOwnerFee, oldValidatorFee = chain.GetFeeInfo(contractName)
+
+	request := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamHname, contractRecord.Hname(), feeParam, newFee)
+	_, err = chain.PostRequestSync(request, authorizedSigScheme)
+	require.NoError(chainManager.env.T, err)
+
+	return oldFeeColor, oldChainOwnerFee, oldValidatorFee
 }
 
 // GrantDeployPermission gives permission, as the chain originator, to 'authorizedSigScheme' to deploy SCs into the specified chain. Fails test on error.
