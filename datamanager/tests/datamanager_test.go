@@ -34,6 +34,18 @@ func Test_MustGetBytesResult(t *testing.T) {
 	require.Equal(t, expectedDecoded, actualDecoded)
 }
 
+func Test_MustGetBool(t *testing.T) {
+	notSolo := notsolo.New(t)
+	expectedDecoded := true
+	dataBytes := []byte{1}
+
+	// Act
+	actualDecoded := notSolo.Data.MustGetBool(dataBytes)
+
+	// Assert
+	require.Equal(t, expectedDecoded, actualDecoded)
+}
+
 func Test_MustGetStringResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)

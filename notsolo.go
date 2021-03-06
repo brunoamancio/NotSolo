@@ -7,7 +7,6 @@ import (
 	"github.com/brunoamancio/NotSolo/coloredtokenmanager"
 	"github.com/brunoamancio/NotSolo/datamanager"
 	"github.com/brunoamancio/NotSolo/requestmanager"
-	"github.com/brunoamancio/NotSolo/responsemanager"
 	"github.com/brunoamancio/NotSolo/signatureschememanager"
 	"github.com/brunoamancio/NotSolo/valuetanglemanager"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -24,7 +23,6 @@ type NotSolo struct {
 	ValueTangle     *valuetanglemanager.ValueTangleManager
 	Chain           *chainmanager.ChainManager
 	Request         *requestmanager.RequestManager
-	Response        *responsemanager.ResponseManager
 	Data            *datamanager.DataManager
 }
 
@@ -71,6 +69,5 @@ func loadManagers(t *testing.T) {
 	notSolo.Chain = chainmanager.New(notSolo.env)
 	notSolo.ValueTangle = valuetanglemanager.New(notSolo.env)
 	notSolo.Request = requestmanager.New(notSolo.env)
-	notSolo.Response = responsemanager.New(notSolo.env)
 	notSolo.Data = datamanager.New(notSolo.env)
 }

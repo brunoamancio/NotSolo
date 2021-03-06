@@ -105,3 +105,10 @@ func (dataManager *DataManager) MustGetBytes(data interface{}) []byte {
 	require.NotNil(dataManager.env.T, bytes, couldNotConvertDataInto+" bytes")
 	return bytes
 }
+
+// MustGetBool converts input data into a bool. Fails test if no input is provided or the data array is longer than 1.
+func (dataManager *DataManager) MustGetBool(data []byte) bool {
+	bytes := dataManager.MustGetBytes(data)
+	require.Len(dataManager.env.T, bytes, 1, "Data does not have length 1")
+	return bytes[0] != 0
+}
