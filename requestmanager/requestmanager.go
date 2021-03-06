@@ -28,8 +28,9 @@ func (requestManager *RequestManager) Post(requesterSigScheme signaturescheme.Si
 }
 
 // MustPost creates a request to contract function in the chain as requester. Fails test if request fails.
-func (requestManager *RequestManager) MustPost(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string, functionName string) dict.Dict {
-	response, err := requestManager.Post(requesterSigScheme, chain, contractName, functionName)
+func (requestManager *RequestManager) MustPost(requesterSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
+	functionName string, params ...interface{}) dict.Dict {
+	response, err := requestManager.Post(requesterSigScheme, chain, contractName, functionName, params...)
 	require.NoError(requestManager.env.T, err)
 	return response
 }
