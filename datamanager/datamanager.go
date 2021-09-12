@@ -1,10 +1,10 @@
 package datamanager
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -43,7 +43,7 @@ func (dataManager *DataManager) MustGetString(data []byte) string {
 }
 
 // MustGetAgentID converts input data into an AgentID. Fails test if no input is provided or cannot be converted.
-func (dataManager *DataManager) MustGetAgentID(data []byte) coretypes.AgentID {
+func (dataManager *DataManager) MustGetAgentID(data []byte) iscp.AgentID {
 	result, exists, err := codec.DecodeAgentID(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" AgentID")
 	require.True(dataManager.env.T, exists, dataDoesNotExist)
@@ -51,7 +51,7 @@ func (dataManager *DataManager) MustGetAgentID(data []byte) coretypes.AgentID {
 }
 
 // MustGetAddress converts input data into an Address. Fails test if no input is provided or cannot be converted.
-func (dataManager *DataManager) MustGetAddress(data []byte) address.Address {
+func (dataManager *DataManager) MustGetAddress(data []byte) ledgerstate.Address {
 	result, exists, err := codec.DecodeAddress(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" Address")
 	require.True(dataManager.env.T, exists, dataDoesNotExist)
@@ -59,7 +59,7 @@ func (dataManager *DataManager) MustGetAddress(data []byte) address.Address {
 }
 
 // MustGetChainID converts input data into a ChainID. Fails test if no input is provided or cannot be converted.
-func (dataManager *DataManager) MustGetChainID(data []byte) coretypes.ChainID {
+func (dataManager *DataManager) MustGetChainID(data []byte) iscp.ChainID {
 	result, exists, err := codec.DecodeChainID(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" ChainID")
 	require.True(dataManager.env.T, exists, dataDoesNotExist)
@@ -67,17 +67,9 @@ func (dataManager *DataManager) MustGetChainID(data []byte) coretypes.ChainID {
 }
 
 // MustGetColor converts input data into a Color. Fails test if no input is provided or cannot be converted.
-func (dataManager *DataManager) MustGetColor(data []byte) balance.Color {
+func (dataManager *DataManager) MustGetColor(data []byte) colored.Color {
 	result, exists, err := codec.DecodeColor(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" Color")
-	require.True(dataManager.env.T, exists, dataDoesNotExist)
-	return result
-}
-
-// MustGetContractID converts input data into a ContractID. Fails test if no input is provided or cannot be converted.
-func (dataManager *DataManager) MustGetContractID(data []byte) coretypes.ContractID {
-	result, exists, err := codec.DecodeContractID(data)
-	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" ContractID")
 	require.True(dataManager.env.T, exists, dataDoesNotExist)
 	return result
 }
@@ -91,7 +83,7 @@ func (dataManager *DataManager) MustGetHash(data []byte) hashing.HashValue {
 }
 
 // MustGetHname converts input data into an Hname. Fails test if no input is provided or cannot be converted.
-func (dataManager *DataManager) MustGetHname(data []byte) coretypes.Hname {
+func (dataManager *DataManager) MustGetHname(data []byte) iscp.Hname {
 	result, exists, err := codec.DecodeHname(data)
 	require.NoError(dataManager.env.T, err, couldNotConvertDataInto+" Hname")
 	require.True(dataManager.env.T, exists, dataDoesNotExist)

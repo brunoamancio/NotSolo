@@ -4,11 +4,14 @@ import (
 	"errors"
 
 	"github.com/brunoamancio/NotSolo/constants"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -35,22 +38,41 @@ func New(env *solo.Solo) *ChainManager {
 //   If 'validatorFeeTarget' is skipped, it is assumed equal to the chainOriginators AgentID
 //
 //   Fails test on error.
-func (chainManager *ChainManager) NewChain(chainOriginator signaturescheme.SignatureScheme, chainName string, validatorFeeTarget ...coretypes.AgentID) *solo.Chain {
-	newChain := chainManager.env.NewChain(chainOriginator, chainName, validatorFeeTarget...)
+func (chainManager *ChainManager) NewChain(chainOriginatorKeyPair *ed25519.KeyPair, chainName string, validatorFeeTarget ...*iscp.AgentID) *solo.Chain {
+
+	initialOriginatorBalanceInL1 := uint64(0)
+	if chainOriginatorKeyPair != nil {
+		chainOriginatorAddress := ledgerstate.NewED25519Address(chainOriginatorKeyPair.PublicKey)
+		initialOriginatorBalanceInL1 = chainManager.env.GetAddressBalance(chainOriginatorAddress, colored.IOTA)
+	}
+
+	newChain := chainManager.env.NewChain(chainOriginatorKeyPair, chainName, validatorFeeTarget...)
 	require.NotNil(chainManager.env.T, newChain, "Could not instantiate a new chain")
-	require.NotEqual(chainManager.env.T, newChain.ChainColor, balance.ColorIOTA)
 
-	// IMPORTANT: When a chain is created, 1 IOTA is colored with the chain's color and sent to the chain's address in the value tangle
-	chainManager.env.AssertAddressBalance(newChain.ChainAddress, newChain.ChainColor, constants.IotaTokensConsumedByChain)
+	// IMPORTANT: When a chain is created >>> USING SOLO <<<, a default amount of IOTA is sent to ChainID in L1
+	// Another IOTA is consumed by the request and also sent to ChainID
+	expectedChainIdBalance := constants.DefaultChainStartingBalance + constants.IotaTokensConsumedByRequest
+	chainManager.env.AssertAddressBalance(newChain.ChainID.AsAddress(), colored.IOTA, expectedChainIdBalance)
 
-	// IMPORTANT: When a chain is created, 1 IOTA is sent from the chain originator's account in the value tangle their account in the chain
-	chainManager.RequireBalance(newChain.OriginatorSigScheme, newChain, balance.ColorIOTA, constants.IotaTokensConsumedByRequest)
+	// IMPORTANT: Originator has no balance in the chain
+	chainManager.RequireBalance(newChain.OriginatorKeyPair, newChain, colored.IOTA, 0)
+
+	// IMPORTANT: Originator has initial balance - the amount transfered from L1
+	chainOriginatorAddress := ledgerstate.NewED25519Address(newChain.OriginatorKeyPair.PublicKey)
+	expectedChainOriginatorBalanceInL1 := uint64(0)
+	if chainOriginatorKeyPair == nil {
+		expectedChainOriginatorBalanceInL1 = utxodb.RequestFundsAmount - expectedChainIdBalance
+	} else {
+		expectedChainOriginatorBalanceInL1 = initialOriginatorBalanceInL1 - expectedChainIdBalance
+	}
+
+	chainManager.env.AssertAddressBalance(chainOriginatorAddress, colored.IOTA, expectedChainOriginatorBalanceInL1)
 
 	// Expect zero initial fees
-	feeColor, ownerFee, validatorFee := newChain.GetFeeInfo(accounts.Name)
-	require.Equal(chainManager.env.T, balance.ColorIOTA, feeColor)
-	require.Equal(chainManager.env.T, int64(0), ownerFee)
-	require.Equal(chainManager.env.T, int64(0), validatorFee)
+	feeColor, ownerFee, validatorFee := newChain.GetFeeInfo(accounts.Contract.Name)
+	require.Equal(chainManager.env.T, colored.IOTA, feeColor)
+	require.Equal(chainManager.env.T, uint64(0), ownerFee)
+	require.Equal(chainManager.env.T, uint64(0), validatorFee)
 
 	chainManager.chains[chainName] = newChain
 	return newChain
@@ -58,13 +80,13 @@ func (chainManager *ChainManager) NewChain(chainOriginator signaturescheme.Signa
 
 // ChangeContractFees changes chains owner fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
 // See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
-func (chainManager *ChainManager) ChangeContractFees(authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
+func (chainManager *ChainManager) ChangeContractFees(authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
 	newContractOwnerFee int64) {
 
-	oldFeeColor, _, oldValidatorFee := changeFee(chainManager, authorizedSigScheme, chain, contractName, root.ParamOwnerFee, newContractOwnerFee)
+	oldFeeColor, _, oldValidatorFee := changeFee(chainManager, authorizedKeyPair, chain, contractName, governance.ParamOwnerFee, newContractOwnerFee)
 
 	// Expect new fee chain owner fee
-	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Name)
+	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Contract.Name)
 	require.Equal(chainManager.env.T, oldFeeColor, feeColor)
 	require.Equal(chainManager.env.T, oldValidatorFee, validatorFee)
 	require.Equal(chainManager.env.T, newContractOwnerFee, ownerFee)
@@ -72,19 +94,19 @@ func (chainManager *ChainManager) ChangeContractFees(authorizedSigScheme signatu
 
 // ChangeValidatorFees changes the validator fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
 // See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
-func (chainManager *ChainManager) ChangeValidatorFees(authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
+func (chainManager *ChainManager) ChangeValidatorFees(authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
 	newValidatorFee int64) {
-	oldFeeColor, oldOwnerFee, _ := changeFee(chainManager, authorizedSigScheme, chain, contractName, root.ParamValidatorFee, newValidatorFee)
+	oldFeeColor, oldOwnerFee, _ := changeFee(chainManager, authorizedKeyPair, chain, contractName, governance.ParamValidatorFee, newValidatorFee)
 
 	// Expect new fee chain owner fee
-	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Name)
+	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Contract.Name)
 	require.Equal(chainManager.env.T, oldFeeColor, feeColor)
 	require.Equal(chainManager.env.T, newValidatorFee, validatorFee)
 	require.Equal(chainManager.env.T, oldOwnerFee, ownerFee)
 }
 
-func changeFee(chainManager *ChainManager, authorizedSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, contractName string,
-	feeParam string, newFee int64) (oldFeeColor balance.Color, oldChainOwnerFee int64, oldValidatorFee int64) {
+func changeFee(chainManager *ChainManager, authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
+	feeParam string, newFee int64) (oldFeeColor colored.Color, oldChainOwnerFee uint64, oldValidatorFee uint64) {
 
 	contractRecord, err := chainManager.GetContractRecord(chain, contractName)
 	require.NoError(chainManager.env.T, err)
@@ -92,62 +114,64 @@ func changeFee(chainManager *ChainManager, authorizedSigScheme signaturescheme.S
 
 	oldFeeColor, oldChainOwnerFee, oldValidatorFee = chain.GetFeeInfo(contractName)
 
-	request := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee, root.ParamHname, contractRecord.Hname(), feeParam, newFee)
-	_, err = chain.PostRequestSync(request, authorizedSigScheme)
+	request := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name, root.ParamHname, contractRecord.Hname(), feeParam, newFee)
+	_, err = chain.PostRequestSync(request, authorizedKeyPair)
 	require.NoError(chainManager.env.T, err)
 
 	return oldFeeColor, oldChainOwnerFee, oldValidatorFee
 }
 
-// GrantDeployPermission gives permission, as the chain originator, to 'authorizedSigScheme' to deploy SCs into the specified chain. Fails test on error.
-func (chainManager *ChainManager) GrantDeployPermission(chain *solo.Chain, authorizedSigScheme signaturescheme.SignatureScheme) {
-	authorizedAgentID := coretypes.NewAgentIDFromSigScheme(authorizedSigScheme)
-	err := chain.GrantDeployPermission(nil, authorizedAgentID)
+// GrantDeployPermission gives permission, as the chain originator, to 'authorizedKeyPair' to deploy SCs into the specified chain. Fails test on error.
+func (chainManager *ChainManager) GrantDeployPermission(chain *solo.Chain, authorizedKeyPair *ed25519.KeyPair) {
+	authorizedAddress := ledgerstate.NewED25519Address(authorizedKeyPair.PublicKey)
+	authorizedAgentID := iscp.NewAgentID(authorizedAddress, 0)
+	err := chain.GrantDeployPermission(nil, *authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not grant deploy permission")
 }
 
-// RevokeDeployPermission revokes permission, as the chain originator, from 'authorizedSigScheme' to deploy SCs into 'chain'. Fails test on error.
-func (chainManager *ChainManager) RevokeDeployPermission(chain *solo.Chain, authorizedSigScheme signaturescheme.SignatureScheme) {
-	authorizedAgentID := coretypes.NewAgentIDFromSigScheme(authorizedSigScheme)
-	err := chain.RevokeDeployPermission(nil, authorizedAgentID)
+// RevokeDeployPermission revokes permission, as the chain originator, from 'authorizedKeyPair' to deploy SCs into 'chain'. Fails test on error.
+func (chainManager *ChainManager) RevokeDeployPermission(chain *solo.Chain, authorizedKeyPair *ed25519.KeyPair) {
+	authorizedAddress := ledgerstate.NewED25519Address(authorizedKeyPair.PublicKey)
+	authorizedAgentID := iscp.NewAgentID(authorizedAddress, 0)
+	err := chain.RevokeDeployPermission(nil, *authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not revoke deploy permission")
 }
 
 // GrantAgentDeployPermission gives permission, as the chain originator, to 'authorizedAgentID' to deploy SCs into the specified chain. Fails test on error.
-func (chainManager *ChainManager) GrantAgentDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
+func (chainManager *ChainManager) GrantAgentDeployPermission(chain *solo.Chain, authorizedAgentID iscp.AgentID) {
 	err := chain.GrantDeployPermission(nil, authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not grant deploy permission")
 }
 
 // RevokeAgentDeployPermission revokes permission, as the chain originator, from 'authorizedAgentID' to deploy SCs into 'chain'. Fails test on error.
-func (chainManager *ChainManager) RevokeAgentDeployPermission(chain *solo.Chain, authorizedAgentID coretypes.AgentID) {
+func (chainManager *ChainManager) RevokeAgentDeployPermission(chain *solo.Chain, authorizedAgentID iscp.AgentID) {
 	err := chain.RevokeDeployPermission(nil, authorizedAgentID)
 	require.NoError(chainManager.env.T, err, "Could not revoke deploy permission")
 }
 
-// MustGetContractID ensures 'chain' contains 'contract' and returns its ContractID. Fails test on error.
-func (chainManager *ChainManager) MustGetContractID(chain *solo.Chain, contractName string) coretypes.ContractID {
+// MustGetAgentID ensures 'chain' contains 'contract' and returns its ContractID. Fails test on error.
+func (chainManager *ChainManager) MustGetAgentID(chain *solo.Chain, contractName string) *iscp.AgentID {
 	chain, ok := chainManager.chains[chain.Name]
 	require.True(chainManager.env.T, ok)
 	require.NotNil(chainManager.env.T, chain)
 
-	contractID := coretypes.NewContractID(chain.ChainID, coretypes.Hn(contractName))
+	contractID := chain.ContractAgentID(contractName)
 	return contractID
 }
 
 // DeployWasmContract uploads and deploys 'constract wasm file'
-func (chainManager *ChainManager) DeployWasmContract(chain *solo.Chain, contractOriginator signaturescheme.SignatureScheme, contractName string, contractWasmFilePath string) {
-	err := chain.DeployWasmContract(contractOriginator, contractName, contractWasmFilePath)
+func (chainManager *ChainManager) DeployWasmContract(chain *solo.Chain, contractOriginatorKeyPair *ed25519.KeyPair, contractName string, contractWasmFilePath string) {
+	err := chain.DeployWasmContract(contractOriginatorKeyPair, contractName, contractWasmFilePath)
 	require.NoError(chainManager.env.T, err, "Could not deploy wasm contract")
 }
 
 // NewChainAndDeployWasmContract calls NewChain and then DeployWasmContract
-func (chainManager *ChainManager) NewChainAndDeployWasmContract(chainOriginator signaturescheme.SignatureScheme, chainName string,
-	contractOriginator signaturescheme.SignatureScheme, contractName string, contractWasmFilePath string,
-	validatorFeeTarget ...coretypes.AgentID) (*solo.Chain, *root.ContractRecord) {
+func (chainManager *ChainManager) NewChainAndDeployWasmContract(chainOriginatorKeyPair *ed25519.KeyPair, chainName string,
+	contractOriginatorKeyPair *ed25519.KeyPair, contractName string, contractWasmFilePath string,
+	validatorFeeTarget ...*iscp.AgentID) (*solo.Chain, *root.ContractRecord) {
 
-	chain := chainManager.NewChain(chainOriginator, chainName, validatorFeeTarget...)
-	chainManager.DeployWasmContract(chain, contractOriginator, contractName, contractWasmFilePath)
+	chain := chainManager.NewChain(chainOriginatorKeyPair, chainName, validatorFeeTarget...)
+	chainManager.DeployWasmContract(chain, contractOriginatorKeyPair, contractName, contractWasmFilePath)
 	contractRecord := chainManager.MustGetContractRecord(chain, contractName)
 	return chain, contractRecord
 }
@@ -165,57 +189,59 @@ func (chainManager *ChainManager) MustGetContractRecord(chain *solo.Chain, contr
 	return contractRecord
 }
 
-// MustTransferToValueTangleToSelf makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the depositors address in the value tangle.
+// MustTransferToL1ToSelf makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the depositors address in L1.
 // Fails test on error.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'chain' to his address in the value tangle.
-func (chainManager *ChainManager) MustTransferToValueTangleToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64) {
-	err := chainManager.TransferToValueTangleToSelf(depositorSigScheme, chain, color, transferAmount)
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'chain' to his address in L1.
+func (chainManager *ChainManager) MustTransferToL1ToSelf(depositorKeyPair *ed25519.KeyPair, chain *solo.Chain, color colored.Color, transferAmount uint64) {
+	err := chainManager.TransferToL1ToSelf(depositorKeyPair, chain, color, transferAmount)
 	require.NoError(chainManager.env.T, err)
 }
 
-// TransferToValueTangleToSelf makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the depositors address in the value tangle.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'chain' to his address in the value tangle.
-func (chainManager *ChainManager) TransferToValueTangleToSelf(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64) error {
+// TransferToL1ToSelf makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the depositors address in L1.
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'chain' to his address in L1.
+func (chainManager *ChainManager) TransferToL1ToSelf(depositorKeyPair *ed25519.KeyPair, chain *solo.Chain, color colored.Color, transferAmount uint64) error {
 
-	request := solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdrawToAddress)
-	_, err := chain.PostRequestSync(request, depositorSigScheme)
+	request := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(transferAmount)
+	_, err := chain.PostRequestSync(request, depositorKeyPair)
 
 	return err
 }
 
 // MustTransferBetweenChains makes transfer of 'amount' of 'color' from the depositors account in 'sourceChain' to the receivers account in 'destinationChain'.
 // Transfers to 'depositor' if no receiver is defined. Fails test on error.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'sourceChain' to his address in the value tangle.
-func (chainManager *ChainManager) MustTransferBetweenChains(depositorSigScheme signaturescheme.SignatureScheme, sourceChain *solo.Chain, color balance.Color, transferAmount int64,
-	destinationChain *solo.Chain, receiverSigScheme signaturescheme.SignatureScheme) {
-	err := chainManager.TransferBetweenChains(depositorSigScheme, sourceChain, color, transferAmount, destinationChain, receiverSigScheme)
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'sourceChain' to his address in L1.
+func (chainManager *ChainManager) MustTransferBetweenChains(depositorKeyPair *ed25519.KeyPair, sourceChain *solo.Chain, color colored.Color, transferAmount uint64,
+	destinationChain *solo.Chain, receiverKeyPair *ed25519.KeyPair) {
+	err := chainManager.TransferBetweenChains(depositorKeyPair, sourceChain, color, transferAmount, destinationChain, receiverKeyPair)
 	require.NoError(chainManager.env.T, err)
 }
 
 // TransferBetweenChains makes transfer of 'amount' of 'color' from the depositors account in 'sourceChain' to the receivers account in 'destinationChain'.
 // Transfers to 'depositor' if no receiver is defined.
-// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'sourceChain' to his address in the value tangle.
-func (chainManager *ChainManager) TransferBetweenChains(depositorSigScheme signaturescheme.SignatureScheme, sourceChain *solo.Chain, color balance.Color, transferAmount int64,
-	destinationChain *solo.Chain, receiverSigScheme signaturescheme.SignatureScheme) error {
+// Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens of 'depositor' are withdrawn from 'sourceChain' to his address in L1.
+func (chainManager *ChainManager) TransferBetweenChains(depositorKeyPair *ed25519.KeyPair, sourceChain *solo.Chain, color colored.Color, transferAmount uint64,
+	destinationChain *solo.Chain, receiverKeyPair *ed25519.KeyPair) error {
 
-	isReceiverDefined := receiverSigScheme != nil
+	isReceiverDefined := receiverKeyPair != nil
 
 	if !isReceiverDefined {
-		receiverSigScheme = depositorSigScheme
+		receiverKeyPair = depositorKeyPair
 	}
 
-	// Transfer from 'sourceChain' to depositor's account in the value tangle
-	err := chainManager.TransferToValueTangleToSelf(depositorSigScheme, sourceChain, color, transferAmount)
+	// Transfer from 'sourceChain' to depositor's account in L1
+	err := chainManager.TransferToL1ToSelf(depositorKeyPair, sourceChain, color, transferAmount)
 
 	if err != nil {
 		return err
 	}
 
-	// Transfer from depositor's address in the value tangle to receiver's account in 'destinationChain'
-	receiverAgentID := coretypes.NewAgentIDFromSigScheme(receiverSigScheme)
-	request := solo.NewCallParams(accounts.Name, accounts.FuncDeposit, accounts.ParamAgentID, receiverAgentID).
+	// Transfer from depositor's address in L1 to receiver's account in 'destinationChain'
+	receiverAddress := ledgerstate.NewED25519Address(receiverKeyPair.PublicKey)
+	receiverAgentID := iscp.NewAgentID(receiverAddress, 0)
+
+	request := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name, accounts.ParamAgentID, receiverAgentID).
 		WithTransfer(color, transferAmount)
-	_, err = destinationChain.PostRequestSync(request, depositorSigScheme)
+	_, err = destinationChain.PostRequestSync(request, depositorKeyPair)
 
 	return err
 }
@@ -223,38 +249,40 @@ func (chainManager *ChainManager) TransferBetweenChains(depositorSigScheme signa
 // TransferWithinChain makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the receivers account in the same chain.
 // Nothing is transfered if no receiver is defined.
 // Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn from 'sourceChain', not only the specified color and amount.
-func (chainManager *ChainManager) TransferWithinChain(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64,
-	receiverSigScheme signaturescheme.SignatureScheme) error {
-	isReceiverDefined := receiverSigScheme != nil
+func (chainManager *ChainManager) TransferWithinChain(depositorKeyPair *ed25519.KeyPair, chain *solo.Chain, color colored.Color, transferAmount uint64,
+	receiverKeyPair *ed25519.KeyPair) error {
+	isReceiverDefined := receiverKeyPair != nil
 
 	if !isReceiverDefined {
-		return errors.New("Receiver not defined")
+		return errors.New("receiver not defined")
 	}
 
 	// Transfer from depositor's account in 'chain' to the receiver's account in the same chain.
-	err := chainManager.TransferBetweenChains(depositorSigScheme, chain, color, transferAmount, chain, receiverSigScheme)
+	err := chainManager.TransferBetweenChains(depositorKeyPair, chain, color, transferAmount, chain, receiverKeyPair)
 	return err
 }
 
 // MustTransferWithinChain makes transfer of 'amount' of 'color' from the depositors account in 'chain' to the receivers account in the same chain.
 // Nothing is transfered if no receiver is defined. Fails test on error.
 // Important: Due to the current logic in the accounts contract (from IOTA Foundation), all tokens are withdrawn from 'sourceChain', not only the specified color and amount.
-func (chainManager *ChainManager) MustTransferWithinChain(depositorSigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, transferAmount int64,
-	receiverSigScheme signaturescheme.SignatureScheme) {
-	err := chainManager.TransferWithinChain(depositorSigScheme, chain, color, transferAmount, receiverSigScheme)
+func (chainManager *ChainManager) MustTransferWithinChain(depositorKeyPair *ed25519.KeyPair, chain *solo.Chain, color colored.Color, transferAmount uint64,
+	receiverKeyPair *ed25519.KeyPair) {
+	err := chainManager.TransferWithinChain(depositorKeyPair, chain, color, transferAmount, receiverKeyPair)
 	require.NoError(chainManager.env.T, err)
 }
 
 // RequireBalance verifies if the signature scheme has the expected balance of 'color' in 'chain'.
 // Fails test if balance is not equal to expectedBalance.
-func (chainManager *ChainManager) RequireBalance(sigScheme signaturescheme.SignatureScheme, chain *solo.Chain, color balance.Color, expectedBalance int64) {
-	agentID := coretypes.NewAgentIDFromSigScheme(sigScheme)
+func (chainManager *ChainManager) RequireBalance(keyPair *ed25519.KeyPair, chain *solo.Chain, color colored.Color, expectedBalance uint64) {
+	address := ledgerstate.NewED25519Address(keyPair.PublicKey)
+	agentID := iscp.NewAgentID(address, 0)
+
 	chain.AssertAccountBalance(agentID, color, expectedBalance)
 }
 
 // RequireContractBalance verifies if 'contract' has the expected balance of 'color' in 'chain'.
 // Fails test if contract is neither defined, nor found, or if the balance is not equal to expectedBalance.
-func (chainManager *ChainManager) RequireContractBalance(chain *solo.Chain, contractName string, color balance.Color, expectedBalance int64) {
+func (chainManager *ChainManager) RequireContractBalance(chain *solo.Chain, contractName string, color colored.Color, expectedBalance uint64) {
 
 	// Get contract record
 	contractRecord, err := chain.FindContract(contractName)
@@ -262,8 +290,7 @@ func (chainManager *ChainManager) RequireContractBalance(chain *solo.Chain, cont
 	require.NotNil(chainManager.env.T, contractRecord, "Contract could not be found")
 
 	// Get contract's AgentID
-	contractID := coretypes.NewContractID(chain.ChainID, contractRecord.Hname())
-	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
+	contractAgentID := chain.ContractAgentID(contractRecord.Name)
 
 	chain.AssertAccountBalance(contractAgentID, color, expectedBalance)
 }

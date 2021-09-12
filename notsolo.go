@@ -6,9 +6,9 @@ import (
 	"github.com/brunoamancio/NotSolo/chainmanager"
 	"github.com/brunoamancio/NotSolo/coloredtokenmanager"
 	"github.com/brunoamancio/NotSolo/datamanager"
+	"github.com/brunoamancio/NotSolo/keypairmanager"
+	"github.com/brunoamancio/NotSolo/l1manager"
 	"github.com/brunoamancio/NotSolo/requestmanager"
-	"github.com/brunoamancio/NotSolo/signatureschememanager"
-	"github.com/brunoamancio/NotSolo/valuetanglemanager"
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
@@ -18,9 +18,9 @@ type NotSolo struct {
 	debug           bool
 	printStackTrace bool
 	env             *solo.Solo
-	SigScheme       *signatureschememanager.SignatureSchemeManager
+	KeyPair         *keypairmanager.KeyPairManager
 	ColoredToken    *coloredtokenmanager.ColoredTokenManager
-	ValueTangle     *valuetanglemanager.ValueTangleManager
+	L1              *l1manager.L1Manager
 	Chain           *chainmanager.ChainManager
 	Request         *requestmanager.RequestManager
 	Data            *datamanager.DataManager
@@ -64,10 +64,10 @@ func New(t *testing.T) *NotSolo {
 func loadManagers(t *testing.T) {
 	notSolo.env = solo.New(t, notSolo.debug, notSolo.printStackTrace)
 
-	notSolo.SigScheme = signatureschememanager.New(notSolo.env)
+	notSolo.KeyPair = keypairmanager.New(notSolo.env)
 	notSolo.ColoredToken = coloredtokenmanager.New(notSolo.env)
 	notSolo.Chain = chainmanager.New(notSolo.env)
-	notSolo.ValueTangle = valuetanglemanager.New(notSolo.env)
+	notSolo.L1 = l1manager.New(notSolo.env)
 	notSolo.Request = requestmanager.New(notSolo.env)
 	notSolo.Data = datamanager.New(notSolo.env)
 }
