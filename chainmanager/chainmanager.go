@@ -81,7 +81,7 @@ func (chainManager *ChainManager) NewChain(chainOriginatorKeyPair *ed25519.KeyPa
 // ChangeContractFees changes chains owner fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
 // See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
 func (chainManager *ChainManager) ChangeContractFees(authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
-	newContractOwnerFee int64) {
+	newContractOwnerFee uint64) {
 
 	oldFeeColor, _, oldValidatorFee := changeFee(chainManager, authorizedKeyPair, chain, contractName, governance.ParamOwnerFee, newContractOwnerFee)
 
@@ -95,7 +95,7 @@ func (chainManager *ChainManager) ChangeContractFees(authorizedKeyPair *ed25519.
 // ChangeValidatorFees changes the validator fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
 // See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
 func (chainManager *ChainManager) ChangeValidatorFees(authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
-	newValidatorFee int64) {
+	newValidatorFee uint64) {
 	oldFeeColor, oldOwnerFee, _ := changeFee(chainManager, authorizedKeyPair, chain, contractName, governance.ParamValidatorFee, newValidatorFee)
 
 	// Expect new fee chain owner fee
@@ -106,7 +106,7 @@ func (chainManager *ChainManager) ChangeValidatorFees(authorizedKeyPair *ed25519
 }
 
 func changeFee(chainManager *ChainManager, authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
-	feeParam string, newFee int64) (oldFeeColor colored.Color, oldChainOwnerFee uint64, oldValidatorFee uint64) {
+	feeParam string, newFee uint64) (oldFeeColor colored.Color, oldChainOwnerFee uint64, oldValidatorFee uint64) {
 
 	contractRecord, err := chainManager.GetContractRecord(chain, contractName)
 	require.NoError(chainManager.env.T, err)
