@@ -129,7 +129,7 @@ func Test_MustGetColorResult(t *testing.T) {
 func Test_MustGetHashResult(t *testing.T) {
 	// Arrange
 	notSolo := notsolo.New(t)
-	expectedDecoded := notSolo.Chain.NewChain(nil, "dummyChain").State.Hash()
+	expectedDecoded := notSolo.Chain.NewChain(nil, "dummyChain").State.StateCommitment()
 	dataBytes := notSolo.Data.MustGetBytes(&expectedDecoded)
 
 	// Act
