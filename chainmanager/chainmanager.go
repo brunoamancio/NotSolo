@@ -114,7 +114,7 @@ func changeFee(chainManager *ChainManager, authorizedKeyPair *ed25519.KeyPair, c
 
 	oldFeeColor, oldChainOwnerFee, oldValidatorFee = chain.GetFeeInfo(contractName)
 
-	request := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name, root.ParamHname, contractRecord.Hname(), feeParam, newFee)
+	request := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name, governance.ParamHname, contractRecord.Hname(), feeParam, newFee)
 	_, err = chain.PostRequestSync(request, authorizedKeyPair)
 	require.NoError(chainManager.env.T, err)
 
