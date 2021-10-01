@@ -114,8 +114,7 @@ func changeFee(chainManager *ChainManager, authorizedKeyPair *ed25519.KeyPair, c
 
 	oldFeeColor, oldChainOwnerFee, oldValidatorFee = chain.GetFeeInfo(contractName)
 
-	request := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name, governance.ParamHname, contractRecord.Hname(), feeParam, newFee
-								 ).WithIotas(constants.IotaTokensConsumedByRequest)
+	request := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name, governance.ParamHname, contractRecord.Hname(), feeParam, newFee).WithIotas(constants.IotaTokensConsumedByRequest)
 	_, err = chain.PostRequestSync(request, authorizedKeyPair)
 	require.NoError(chainManager.env.T, err)
 
