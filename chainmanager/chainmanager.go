@@ -86,7 +86,7 @@ func (chainManager *ChainManager) ChangeContractFees(authorizedKeyPair *ed25519.
 	oldFeeColor, _, oldValidatorFee := changeFee(chainManager, authorizedKeyPair, chain, contractName, governance.ParamOwnerFee, newContractOwnerFee)
 
 	// Expect new fee chain owner fee
-	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Contract.Name)
+	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(contractName)
 	require.Equal(chainManager.env.T, oldFeeColor, feeColor)
 	require.Equal(chainManager.env.T, oldValidatorFee, validatorFee)
 	require.Equal(chainManager.env.T, newContractOwnerFee, ownerFee)
@@ -99,7 +99,7 @@ func (chainManager *ChainManager) ChangeValidatorFees(authorizedKeyPair *ed25519
 	oldFeeColor, oldOwnerFee, _ := changeFee(chainManager, authorizedKeyPair, chain, contractName, governance.ParamValidatorFee, newValidatorFee)
 
 	// Expect new fee chain owner fee
-	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(accounts.Contract.Name)
+	feeColor, ownerFee, validatorFee := chain.GetFeeInfo(contractName)
 	require.Equal(chainManager.env.T, oldFeeColor, feeColor)
 	require.Equal(chainManager.env.T, newValidatorFee, validatorFee)
 	require.Equal(chainManager.env.T, oldOwnerFee, ownerFee)
