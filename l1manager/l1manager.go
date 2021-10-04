@@ -105,7 +105,7 @@ func transferToAgent(depositorKeypair *ed25519.KeyPair, chain *solo.Chain, color
 	return err
 }
 
-// RequireBalance verifies if the signature scheme has the expected balance of 'color' in L1.
+// RequireBalance verifies if the key pair has the expected balance of 'color' in L1.
 // Fails test if balance is not equal to expectedBalance.
 func (l1Manager *L1Manager) RequireBalance(keyPair *ed25519.KeyPair, color colored.Color, expectedBalance uint64) {
 	address := ledgerstate.NewED25519Address(keyPair.PublicKey)

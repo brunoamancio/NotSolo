@@ -271,13 +271,22 @@ func (chainManager *ChainManager) MustTransferWithinChain(depositorKeyPair *ed25
 	require.NoError(chainManager.env.T, err)
 }
 
-// RequireBalance verifies if the signature scheme has the expected balance of 'color' in 'chain'.
+// RequireBalance verifies if the key pair has the expected balance of 'color' in 'chain'.
 // Fails test if balance is not equal to expectedBalance.
 func (chainManager *ChainManager) RequireBalance(keyPair *ed25519.KeyPair, chain *solo.Chain, color colored.Color, expectedBalance uint64) {
 	address := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	agentID := iscp.NewAgentID(address, 0)
 
 	chain.AssertAccountBalance(agentID, color, expectedBalance)
+}
+
+// RequireBalance verifies if chain's 'agentID' has the expected balance of 'color' in the 'chain' itself.
+// Fails test if balance is not equal to expectedBalance.
+func (chainManager *ChainManager) RequireChainBalance(chain *solo.Chain, color colored.Color, expectedBalance uint64) {
+	chainAddress := chain.ChainID.AsAddress()
+	chainAgentID := iscp.NewAgentID(chainAddress, 0)
+
+	chain.AssertAccountBalance(chainAgentID, colored.IOTA, expectedBalance)
 }
 
 // RequireContractBalance verifies if 'contract' has the expected balance of 'color' in 'chain'.

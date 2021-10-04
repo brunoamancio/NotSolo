@@ -15,7 +15,7 @@ type KeyPairManager struct {
 	env *solo.Solo
 }
 
-// New instantiates a signature scheme manager
+// New instantiates a key pair manager
 func New(env *solo.Solo) *KeyPairManager {
 	keyPairHandler := &KeyPairManager{env: env}
 	return keyPairHandler
@@ -58,7 +58,7 @@ func (keyPairHandler *KeyPairManager) MustGetAddress(keyPair *ed25519.KeyPair) l
 	return address
 }
 
-// RequireL1Balance verifies if the signature scheme has the expected balance of the specified color in L1.
+// RequireL1Balance verifies if the key pair has the expected balance of the specified color in L1.
 // Fails test if balance is not equal to expectedBalance.
 func (keyPairHandler *KeyPairManager) RequireL1Balance(keyPair *ed25519.KeyPair, color colored.Color, expectedBalance uint64) {
 	address := ledgerstate.NewED25519Address(keyPair.PublicKey)
