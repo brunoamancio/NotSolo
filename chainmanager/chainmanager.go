@@ -33,8 +33,8 @@ func New(env *solo.Solo) *ChainManager {
 	return chainManager
 }
 
-// NewChain instantiates a new chain
-//   If 'chainOriginator' is nil, a new SignatureScheme is generated and 1337 iota tokens are assigned to it (amount of funds is defined in utxodb.RequestFundsAmount)
+// NewChain instantiates a new chain with initial balance equal to 'expectedChainIdBalance' which is debited from the chainOriginator's balance.
+//   If 'chainOriginator' is nil, a new KeyPair is generated and 'utxodb.RequestFundsAmount' IOTA tokens are assigned to it
 //   If 'validatorFeeTarget' is skipped, it is assumed equal to the chainOriginators AgentID
 //
 //   Fails test on error.
@@ -78,7 +78,7 @@ func (chainManager *ChainManager) NewChain(chainOriginatorKeyPair *ed25519.KeyPa
 	return newChain
 }
 
-// ChangeContractFees changes chains owner fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
+// ChangeContractFees changes chains owner fee as 'authorized signature' scheme. Anyone with an authorized key pair can use this. This request costs 'constants.IotaTokensConsumedByRequest' IOTA token.
 // See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
 func (chainManager *ChainManager) ChangeContractFees(authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
 	newContractOwnerFee uint64) {
@@ -92,7 +92,7 @@ func (chainManager *ChainManager) ChangeContractFees(authorizedKeyPair *ed25519.
 	require.Equal(chainManager.env.T, newContractOwnerFee, ownerFee)
 }
 
-// ChangeValidatorFees changes the validator fee as 'authorized signature' scheme. Anyone with an authorized signature can use this.
+// ChangeValidatorFees changes the validator fee as 'authorized signature' scheme. Anyone with an authorized key pair can use this. This request costs 'constants.IotaTokensConsumedByRequest' IOTA token.
 // See 'GrantDeployPermission' on how to (de)authorize chain changes. Fails test on error.
 func (chainManager *ChainManager) ChangeValidatorFees(authorizedKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
 	newValidatorFee uint64) {
@@ -119,6 +119,13 @@ func changeFee(chainManager *ChainManager, authorizedKeyPair *ed25519.KeyPair, c
 	require.NoError(chainManager.env.T, err)
 
 	return oldFeeColor, oldChainOwnerFee, oldValidatorFee
+}
+
+// Harvest allows the 'chain owner' to withdraw funds from 'chain'to his account in the same 'chain'. This request costs 'constants.IotaTokensConsumedByRequest' IOTA token.
+func (chainManager *ChainManager) Harvest(chain *solo.Chain, color colored.Color, withdrawalAmount uint64) {
+	request := solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name, accounts.ParamWithdrawAmount, withdrawalAmount, accounts.ParamWithdrawColor, colored.IOTA).WithIotas(constants.IotaTokensConsumedByRequest)
+	_, err := chain.PostRequestSync(request, chain.OriginatorKeyPair)
+	require.NoError(chainManager.env.T, err, "Could not harvest funds.")
 }
 
 // GrantDeployPermission gives permission, as the chain originator, to 'authorizedKeyPair' to deploy SCs into the specified chain. Fails test on error.
