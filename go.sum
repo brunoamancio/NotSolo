@@ -519,8 +519,8 @@ github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a h1:JKIoZ7yx
 github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a/go.mod h1:L4a9tQOOlD37go7UztwlCFMrNlmgwKK9ixaPf45A/8U=
 github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e h1:jUHV5HGa/1o9qoPPr8ms3dMueSVUb1ZB2Z1XyJ79qfU=
 github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e/go.mod h1:NyBg/Ny7FFAdDs59zdwTVoysU2ZbJVQnRwyLIDFKJYA=
-github.com/iotaledger/wasp v0.1.1-0.20210929181634-139d9560a577 h1:UxNTTqJOnu+pSDTwGykCuQ2ep+xd57aPewQ2XlW6Sm4=
-github.com/iotaledger/wasp v0.1.1-0.20210929181634-139d9560a577/go.mod h1:pzangTfT3RVT3vMf+UscV2rsaPsOy8ukPQtNdfJfSpk=
+github.com/iotaledger/wasp v0.1.1-0.20211005075356-664297e327c9 h1:IiXq5v0qu0piRcEyodsDVbZ6fzeOZebM1eIUaq6Ii6g=
+github.com/iotaledger/wasp v0.1.1-0.20211005075356-664297e327c9/go.mod h1:pzangTfT3RVT3vMf+UscV2rsaPsOy8ukPQtNdfJfSpk=
 github.com/ipfs/go-cid v0.0.1/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
 github.com/ipfs/go-cid v0.0.2/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
 github.com/ipfs/go-cid v0.0.3/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=

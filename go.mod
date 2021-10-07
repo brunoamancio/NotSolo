@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
 	github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e
-	github.com/iotaledger/wasp v0.1.1-0.20210929181634-139d9560a577
+	github.com/iotaledger/wasp v0.1.1-0.20211005075356-664297e327c9
 	github.com/stretchr/testify v1.7.0
 )
 
