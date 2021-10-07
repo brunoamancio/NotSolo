@@ -19,7 +19,8 @@ func New(env *solo.Solo) *RequestManager {
 	return requestManager
 }
 
-// Post creates a request as requester or, if not specified, as the chain originator. The contract function in the chain is called with optional params.
+// Post creates a request as requester or, if not specified, as the chain originator. 1 IOTA is necessary to process the request.
+// The contract function in the chain is called with optional params.
 // Returns response as a Dict or an error.
 func (requestManager *RequestManager) Post(requesterKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
 	functionName string, params ...interface{}) (dict.Dict, error) {
@@ -29,39 +30,40 @@ func (requestManager *RequestManager) Post(requesterKeyPair *ed25519.KeyPair, ch
 
 // PostWithTransfer creates a request as requester or, if not specified, as the chain originator. The contract function in the chain is called with optional params.
 // It attaches 'amount' of 'color' to call. Returns response as a Dict or an error.
-func (requestManager *RequestManager) PostWithTransfer(requesterKeyPair *ed25519.KeyPair,
-	color colored.Color, amount uint64,
-	chain *solo.Chain, contractName string,
-	functionName string, params ...interface{}) (dict.Dict, error) {
+func (requestManager *RequestManager) PostWithTransfer(requesterKeyPair *ed25519.KeyPair, color colored.Color, amount uint64,
+	chain *solo.Chain, contractName string, functionName string, params ...interface{}) (dict.Dict, error) {
 	response, err := post(true, color, amount, requesterKeyPair, chain, contractName, functionName, params...)
 	return response, err
 }
 
+// 1 IOTA is necessary to process the request if 'withTransfer' is 'false'.
 func post(withTransfer bool, color colored.Color, amount uint64,
 	requesterKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
 	functionName string, params ...interface{}) (dict.Dict, error) {
 	request := solo.NewCallParams(contractName, functionName, params...)
 	if withTransfer {
 		request = request.WithTransfer(color, amount)
+	} else {
+		request = request.WithTransfer(colored.IOTA, uint64(1))
 	}
 	response, err := chain.PostRequestSync(request, requesterKeyPair)
 	return response, err
 }
 
-// MustPost creates a request to contract function in the chain as requester. Fails test if request fails.
+// MustPost creates a request to contract function in the chain as requester.
+// 1 IOTA is necessary to process the request.
+// Fails test if request fails.
 func (requestManager *RequestManager) MustPost(requesterKeyPair *ed25519.KeyPair, chain *solo.Chain, contractName string,
 	functionName string, params ...interface{}) dict.Dict {
-	response, err := requestManager.Post(requesterKeyPair, chain, contractName, functionName, params...)
+	response, err := requestManager.PostWithTransfer(requesterKeyPair, colored.IOTA, 1, chain, contractName, functionName, params...)
 	require.NoError(requestManager.env.T, err)
 	return response
 }
 
 // MustPostWithTransfer creates a request to contract function in the chain as requester.
 // It attaches 'amount' of 'color' to call. Fails test if request fails.
-func (requestManager *RequestManager) MustPostWithTransfer(requesterKeyPair *ed25519.KeyPair,
-	color colored.Color, amount uint64,
-	chain *solo.Chain, contractName string,
-	functionName string, params ...interface{}) dict.Dict {
+func (requestManager *RequestManager) MustPostWithTransfer(requesterKeyPair *ed25519.KeyPair, color colored.Color, amount uint64,
+	chain *solo.Chain, contractName string, functionName string, params ...interface{}) dict.Dict {
 	response, err := requestManager.PostWithTransfer(requesterKeyPair, color, amount, chain, contractName, functionName, params...)
 	require.NoError(requestManager.env.T, err)
 	return response
